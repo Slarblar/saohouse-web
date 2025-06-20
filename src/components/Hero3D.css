@@ -1,0 +1,23 @@
+/* Hero3D Container */
+.hero-3d-container {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+}
+
+/* Canvas entry animation */
+@keyframes heroFadeIn {
+  0% {
+    opacity: 0;
+    filter: blur(8px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
+  }
+} 

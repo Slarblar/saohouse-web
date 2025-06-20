@@ -1,0 +1,53 @@
+/* Sophisticated SAO Design with Brand Color */
+:root {
+  /* Brand Color Palette */
+  --brand-primary: #968065;
+  --brand-dark: #2a2a2a;
+  --brand-light: rgba(150, 128, 101, 0.1);
+  --chrome-glow: 0 0 20px rgba(150, 128, 101, 0.3);
+  --accent-glow: 0 0 30px rgba(150, 128, 101, 0.2);
+}
+
+/* Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--brand-primary);
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
+
+/* Clean flat background - no overlay */
+
+/* App Container */
+.app {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
+/* Hero 3D - Full Screen Centered */
+.hero-3d {
+  width: 100vw;
+  height: 100vh;
+}
+
