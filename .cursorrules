@@ -1,0 +1,252 @@
+# Cursor Rules - Sleek & Responsive Design System
+
+## Core Design Principles
+- **Sleek & Modern**: Clean lines, subtle shadows, smooth transitions
+- **Highly Responsive**: Mobile-first approach, fluid layouts
+- **Consistent Aesthetic**: Maintain design language across all components
+- **Performance**: Optimize for speed and smooth interactions
+
+## Design System Standards
+
+### Color Palette
+```css
+/* Primary Colors */
+--primary: #2563eb;
+--primary-hover: #1d4ed8;
+--primary-light: #dbeafe;
+
+/* Neutral Colors */
+--background: #ffffff;
+--surface: #f8fafc;
+--border: #e2e8f0;
+--text-primary: #1e293b;
+--text-secondary: #64748b;
+--text-muted: #94a3b8;
+
+/* Accent Colors */
+--success: #10b981;
+--warning: #f59e0b;
+--error: #ef4444;
+```
+
+### Typography
+- **Font Stack**: Inter, system-ui, -apple-system, sans-serif
+- **Headings**: Font weights 600-700, proper line-height (1.2-1.4)
+- **Body**: Font weight 400-500, line-height 1.6
+- **Scale**: Use consistent type scale (text-sm, text-base, text-lg, etc.)
+
+### Spacing & Layout
+- **Grid**: CSS Grid and Flexbox for layouts
+- **Spacing**: Use consistent spacing scale (4px, 8px, 12px, 16px, 24px, 32px, 48px, 64px)
+- **Containers**: Max-width containers with proper padding
+- **Responsive Breakpoints**: sm (640px), md (768px), lg (1024px), xl (1280px)
+
+## Component Guidelines
+
+### Buttons
+```css
+/* Base button styles */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Primary button */
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+.btn-primary:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+/* Secondary button */
+.btn-secondary {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover {
+  background: var(--primary-light);
+}
+```
+
+### Cards & Surfaces
+- **Border Radius**: 0.5rem (8px) for most elements, 0.75rem (12px) for larger cards
+- **Shadows**: Subtle box-shadows, use drop-shadow for floating elements
+- **Borders**: 1px solid var(--border) for subtle separation
+- **Padding**: Consistent internal spacing (1rem, 1.5rem, 2rem)
+
+### Icons
+- **Library**: Use Lucide React or Heroicons for consistency
+- **Sizes**: 16px, 20px, 24px, 32px standard sizes
+- **Stroke Width**: 1.5-2 for optimal visibility
+- **Alignment**: Always center-align with text
+
+### Forms
+- **Input Fields**: 
+  - Padding: 0.75rem 1rem
+  - Border radius: 0.5rem
+  - Border: 1px solid var(--border)
+  - Focus state with primary color outline
+- **Labels**: Font weight 500, margin-bottom 0.5rem
+- **Validation**: Clear error states with red border and message
+
+## Responsive Design Rules
+
+### Mobile-First Approach
+```css
+/* Mobile base styles */
+.container {
+  padding: 1rem;
+  width: 100%;
+}
+
+/* Tablet and up */
+@media (min-width: 768px) {
+  .container {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+}
+```
+
+### Grid Systems
+- **Mobile**: Single column, stacked elements
+- **Tablet**: 2-3 column grids where appropriate
+- **Desktop**: Up to 4-6 columns for complex layouts
+- **Use CSS Grid**: `grid-template-columns: repeat(auto-fit, minmax(300px, 1fr))`
+
+### Navigation
+- **Mobile**: Hamburger menu with smooth slide/fade animations
+- **Desktop**: Horizontal navigation with hover effects
+- **Sticky**: Use position sticky for main navigation
+
+## Animation & Transitions
+
+### Standard Transitions
+```css
+/* Smooth transitions for interactive elements */
+transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+/* Hover effects */
+transform: translateY(-2px);
+box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+```
+
+### Loading States
+- **Skeleton screens** instead of spinners
+- **Progressive loading** for images
+- **Smooth state transitions** between loading/loaded
+
+## Code Standards
+
+### CSS Organization
+```css
+/* Use CSS custom properties for theming */
+:root {
+  /* Define all colors, spacing, and design tokens */
+}
+
+/* Component-based CSS structure */
+.component-name {
+  /* Layout properties first */
+  /* Visual properties second */
+  /* Transitions last */
+}
+```
+
+### HTML Structure
+- **Semantic HTML**: Use proper tags (header, nav, main, section, article)
+- **Accessibility**: Include proper ARIA labels, alt tags, focus states
+- **Clean markup**: Avoid unnecessary divs, use CSS for styling
+
+### JavaScript/React Patterns
+- **Component composition** over inheritance
+- **Custom hooks** for reusable logic
+- **Consistent prop naming** and TypeScript interfaces
+- **Error boundaries** for graceful error handling
+
+## Performance Guidelines
+
+### Optimization
+- **Image optimization**: Use WebP format, proper sizing, lazy loading
+- **CSS**: Minimize unused CSS, use CSS Grid/Flexbox efficiently
+- **JavaScript**: Code splitting, lazy loading components
+- **Fonts**: Use font-display: swap, preload critical fonts
+
+### Bundle Size
+- **Tree shaking**: Import only what you need
+- **Dynamic imports**: For non-critical components
+- **Analyze bundle**: Regular bundle size monitoring
+
+## Accessibility Standards
+
+### WCAG Guidelines
+- **Color contrast**: Minimum 4.5:1 for normal text, 3:1 for large text
+- **Focus management**: Visible focus indicators, logical tab order
+- **Screen readers**: Proper heading structure, descriptive link text
+- **Keyboard navigation**: All interactive elements accessible via keyboard
+
+### Implementation
+```css
+/* Focus styles */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+```
+
+## File Structure
+```
+src/
+├── components/
+│   ├── ui/           # Reusable UI components
+│   ├── layout/       # Layout components
+│   └── features/     # Feature-specific components
+├── styles/
+│   ├── globals.css   # Global styles and CSS variables
+│   ├── components.css # Component-specific styles
+│   └── utilities.css # Utility classes
+├── hooks/            # Custom React hooks
+├── utils/            # Utility functions
+└── types/            # TypeScript type definitions
+```
+
+## When Creating New Components:
+1. **Start with mobile design** then scale up
+2. **Use established color palette** and spacing
+3. **Include hover/focus states** for interactive elements
+4. **Add loading and error states** where applicable
+5. **Test responsiveness** across all breakpoints
+6. **Follow naming conventions** for classes and components
+7. **Include accessibility features** from the start
+8. **Optimize for performance** (lazy loading, efficient rendering)
+
+## Testing Checklist:
+- [ ] Responsive across all breakpoints
+- [ ] Consistent with design system
+- [ ] Accessible via keyboard
+- [ ] Proper contrast ratios
+- [ ] Smooth animations and transitions
+- [ ] Loading states implemented
+- [ ] Error handling in place
+- [ ] Performance optimized
