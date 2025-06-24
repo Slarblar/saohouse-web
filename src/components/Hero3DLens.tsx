@@ -447,14 +447,43 @@ const ToneMappingExposure: React.FC<{ exposure: number }> = ({ exposure }) => {
   return null;
 };
 
-const Hero3DLens: React.FC = () => {
-  // Load saved settings from localStorage or use defaults
-  const [settings, setSettings] = useState<PostProcessingSettings>(() => {
+// Function to load settings from public folder
+const loadSettingsFromPublic = async (): Promise<PostProcessingSettings> => {
+  try {
+    // First try to fetch the specific file we know exists
+    const response = await fetch('/importsettings/saohouse-settings-2025-06-24 (2).json');
+    if (!response.ok) {
+      throw new Error(`Failed to fetch settings: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log('📥 Loaded settings from public folder:', data);
+    
+    // Extract settings from the JSON structure and merge with defaults
+    const importedSettings = data.settings || data;
+    return {
+      ...defaultSettings,
+      ...importedSettings,
+      toneMapping: { ...defaultSettings.toneMapping, ...importedSettings.toneMapping },
+      bloom: { ...defaultSettings.bloom, ...importedSettings.bloom },
+      chromaticAberration: { ...defaultSettings.chromaticAberration, ...importedSettings.chromaticAberration },
+      filmGrain: { ...defaultSettings.filmGrain, ...importedSettings.filmGrain },
+      ssao: { ...defaultSettings.ssao, ...importedSettings.ssao },
+      blur: { ...defaultSettings.blur, ...importedSettings.blur },
+      depthOfField: { ...defaultSettings.depthOfField, ...importedSettings.depthOfField },
+      lensDistortion: { ...defaultSettings.lensDistortion, ...importedSettings.lensDistortion },
+      motionBlur: { ...defaultSettings.motionBlur, ...importedSettings.motionBlur },
+      hdri: { ...defaultSettings.hdri, ...importedSettings.hdri },
+      godRays: { ...defaultSettings.godRays, ...importedSettings.godRays },
+      material: { ...defaultSettings.material, ...importedSettings.material },
+    };
+  } catch (error) {
+    console.warn('Failed to load settings from public folder, falling back to localStorage or defaults:', error);
+    
+    // Fallback to localStorage
     try {
       const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Merge with defaults to ensure all properties exist
         return {
           ...defaultSettings,
           ...parsed,
@@ -473,22 +502,47 @@ const Hero3DLens: React.FC = () => {
         };
       }
       return defaultSettings;
-    } catch (error) {
-      console.warn('Failed to load settings from localStorage:', error);
+    } catch (localStorageError) {
+      console.warn('Failed to load settings from localStorage:', localStorageError);
       return defaultSettings;
     }
-  });
+  }
+};
+
+const Hero3DLens: React.FC = () => {
+  // Load settings with priority: public folder > localStorage > defaults
+  const [settings, setSettings] = useState<PostProcessingSettings>(defaultSettings);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
   const [showControls, setShowControls] = useState(false);
 
-  // Save settings to localStorage whenever they change
+  // Load settings from public folder on component mount
   useEffect(() => {
-    try {
-      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
-    } catch (error) {
-      console.warn('Failed to save settings to localStorage:', error);
+    const loadSettings = async () => {
+      try {
+        const loadedSettings = await loadSettingsFromPublic();
+        setSettings(loadedSettings);
+        console.log('🎬 Settings loaded successfully from public folder');
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+      } finally {
+        setIsLoadingSettings(false);
+      }
+    };
+
+    loadSettings();
+  }, []); // Only run on mount
+
+  // Save settings to localStorage whenever they change (but not on initial load)
+  useEffect(() => {
+    if (!isLoadingSettings) {
+      try {
+        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+      } catch (error) {
+        console.warn('Failed to save settings to localStorage:', error);
+      }
     }
-  }, [settings]);
+  }, [settings, isLoadingSettings]);
 
   const handleSettingsChange = (newSettings: PostProcessingSettings) => {
     setSettings(newSettings);
@@ -510,6 +564,34 @@ const Hero3DLens: React.FC = () => {
   useEffect(() => {
     console.log('🎨 Tone mapping settings changed:', settings.toneMapping);
   }, [settings.toneMapping]);
+
+  // Show loading screen while settings are being loaded
+  if (isLoadingSettings) {
+    return (
+      <div className="hero-3d-container" style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+        background: '#000000',
+        color: '#ffffff',
+        fontFamily: 'Inter, sans-serif'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '3px solid #333333',
+            borderTop: '3px solid #ffffff',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 20px'
+          }} />
+          <p>Loading SAO House settings...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="hero-3d-container">
