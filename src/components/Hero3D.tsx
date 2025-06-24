@@ -354,42 +354,36 @@ const Hero3D: React.FC = () => {
               <ResponsiveCameraController deviceInfo={deviceInfo} />
 
               {/* Responsive post-processing effects */}
-              {(!deviceInfo.isMobile || deviceInfo.screenSize !== 'small-mobile') && (
-                <EffectComposer>
-                  <ToneMapping 
-                    mode={toneMapping.mode}
-                    exposure={deviceInfo.isMobile ? toneMapping.exposure * 0.8 : toneMapping.exposure}
-                    whitePoint={toneMapping.whitePoint}
-                    adaptationRate={toneMapping.adaptation}
-                  />
-                  
-                  {/* Reduced bloom on mobile for performance */}
-                  <Bloom 
-                    intensity={deviceInfo.isMobile ? bloom.intensity * 0.7 : bloom.intensity}
-                    luminanceThreshold={deviceInfo.isMobile ? bloom.luminanceThreshold * 1.2 : bloom.luminanceThreshold}
-                    luminanceSmoothing={bloom.luminanceSmoothing}
-                    mipmapBlur={deviceInfo.isMobile ? false : bloom.mipmapBlur}
-                  />
-                  
-                  {/* Chromatic aberration - conditional */}
-                  {(!deviceInfo.isMobile || deviceInfo.screenSize !== 'small-mobile') && (
-                    <ChromaticAberration 
-                      offset={chromaticAberration.offset}
-                      blendFunction={chromaticAberration.enabled ? 1 : 0}
-                    />
-                  )}
-                  
-                  <Vignette
-                    offset={deviceInfo.isMobile ? lensDistortion.vignette * 0.8 : lensDistortion.vignette}
-                    darkness={deviceInfo.isMobile ? 0.3 : 0.5}
-                  />
+              <EffectComposer enabled={!deviceInfo.isMobile || deviceInfo.screenSize !== 'small-mobile'}>
+                <ToneMapping 
+                  mode={toneMapping.mode}
+                  exposure={deviceInfo.isMobile ? toneMapping.exposure * 0.8 : toneMapping.exposure}
+                  whitePoint={toneMapping.whitePoint}
+                  adaptationRate={toneMapping.adaptation}
+                />
+                
+                <Bloom 
+                  intensity={deviceInfo.isMobile ? bloom.intensity * 0.7 : bloom.intensity}
+                  luminanceThreshold={deviceInfo.isMobile ? bloom.luminanceThreshold * 1.2 : bloom.luminanceThreshold}
+                  luminanceSmoothing={bloom.luminanceSmoothing}
+                  mipmapBlur={bloom.mipmapBlur}
+                />
+                
+                <ChromaticAberration 
+                  offset={chromaticAberration.offset}
+                  blendFunction={chromaticAberration.enabled ? 1 : 0}
+                />
+                
+                <Vignette
+                  offset={deviceInfo.isMobile ? lensDistortion.vignette * 0.8 : lensDistortion.vignette}
+                  darkness={deviceInfo.isMobile ? 0.3 : 0.5}
+                />
 
-                  <BrightnessContrast 
-                    brightness={deviceInfo.isMobile ? 0.1 : 0}
-                    contrast={deviceInfo.isMobile ? 0.1 : 0}
-                  />
-                </EffectComposer>
-              )}
+                <BrightnessContrast 
+                  brightness={deviceInfo.isMobile ? 0.1 : 0}
+                  contrast={deviceInfo.isMobile ? 0.1 : 0}
+                />
+              </EffectComposer>
             </Suspense>
           </Canvas>
         </div>
