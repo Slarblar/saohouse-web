@@ -12,6 +12,11 @@
   backface-visibility: hidden;
   perspective: 1000;
   -webkit-perspective: 1000;
+  /* Touch optimizations */
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* Canvas container with fade-in animation */
@@ -20,6 +25,8 @@
   height: 100%;
   opacity: 0;
   transition: opacity 0.5s ease-in-out;
+  /* Touch handling */
+  touch-action: pan-x pan-y;
 }
 
 .canvas-container.visible {
@@ -32,6 +39,8 @@
   height: 100% !important;
   display: block !important;
   outline: none;
+  /* Touch optimization */
+  touch-action: manipulation;
 }
 
 .hero-3d-viewport {
@@ -67,6 +76,8 @@
   transform: translateZ(0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  /* Touch handling */
+  touch-action: manipulation;
 }
 
 /* Loading screen with fade-out animation */
@@ -85,6 +96,7 @@
   font-family: system-ui, -apple-system, sans-serif;
   opacity: 1;
   transition: opacity 0.3s ease-in-out;
+  padding: 1rem;
 }
 
 .loading-screen.fade-out {
@@ -92,9 +104,10 @@
 }
 
 .loading-text {
-  font-size: 1.2rem;
+  font-size: var(--font-lg, 1.125rem);
   font-weight: 500;
   color: #fff;
+  text-align: center;
 }
 
 /* Error screen */
@@ -117,20 +130,24 @@
 }
 
 .error-screen h2 {
-  font-size: 1.5rem;
+  font-size: var(--font-xl, 1.25rem);
   margin-bottom: 1rem;
   color: #ff4444;
 }
 
 .error-screen button {
   padding: 0.75rem 1.5rem;
-  font-size: 1rem;
+  font-size: var(--font-base, 1rem);
   background-color: #2563eb;
   color: white;
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
   transition: background-color 0.2s;
+  /* Touch optimization */
+  touch-action: manipulation;
+  min-height: 44px;
+  min-width: 100px;
 }
 
 .error-screen button:hover {
@@ -151,8 +168,10 @@
   opacity: 1 !important;
 }
 
-/* Responsive styles - Mobile First approach */
-@media (max-width: 480px) {
+/* ============ RESPONSIVE OPTIMIZATIONS ============ */
+
+/* Small Mobile (320px - 480px) */
+@media screen and (max-width: 480px) {
   .hero-3d-container {
     /* Mobile optimizations */
     display: block;
@@ -162,12 +181,16 @@
     -webkit-perspective: 1000;
     -webkit-transform: translate3d(0,0,0);
     transform: translate3d(0,0,0);
+    /* Reduce GPU memory usage on mobile */
+    will-change: auto;
   }
 
   .hero-3d-viewport {
     position: fixed;
     transform: translate3d(0,0,0);
     -webkit-transform: translate3d(0,0,0);
+    /* Simplified touch handling for small screens */
+    touch-action: none;
   }
   
   .hero-3d-content {
@@ -178,85 +201,260 @@
     perspective: 1000;
   }
 
-  .loading-progress {
-    width: 160px;
+  .canvas-container > canvas {
+    /* Reduce canvas quality for performance on small screens */
+    image-rendering: optimizeSpeed;
+  }
+
+  .loading-text {
+    font-size: var(--font-base, 1rem);
+  }
+
+  .error-screen {
+    padding: 1rem;
   }
 
   .error-screen h2 {
-    font-size: 1.25rem;
+    font-size: var(--font-lg, 1.125rem);
+  }
+
+  .error-screen button {
+    width: 100%;
+    max-width: 200px;
   }
 }
 
-/* Tablet */
-@media (min-width: 481px) and (max-width: 768px) {
+/* Mobile Phones (480px - 640px) */
+@media screen and (min-width: 480px) and (max-width: 640px) {
   .hero-3d-container {
     touch-action: manipulation;
+    /* Better performance for mid-range mobile */
+    will-change: transform;
   }
 
   .hero-3d-viewport {
     transform: translate3d(0,0,0);
     -webkit-transform: translate3d(0,0,0);
+    touch-action: pan-x pan-y;
   }
 
-  .hero-3d-content {
-    will-change: transform, filter;
-    transform: translateZ(0);
+  .canvas-container > canvas {
+    image-rendering: auto;
   }
-}
 
-/* Large tablet / Small laptop */
-@media (min-width: 769px) and (max-width: 1024px) {
-  .hero-3d-content {
-    will-change: transform;
-    transform: translateZ(0);
+  .error-screen {
+    padding: 1.5rem;
   }
 }
 
-/* Landscape mode */
-@media (max-width: 768px) and (orientation: landscape) {
+/* Tablets Portrait (640px - 768px) */
+@media screen and (min-width: 640px) and (max-width: 768px) {
   .hero-3d-container {
-    height: 100%;
+    /* Enable full performance on tablets */
+    will-change: filter, transform;
   }
 
-  .loading-progress {
-    width: 180px;
+  .hero-3d-viewport {
+    touch-action: pan-x pan-y;
+  }
+
+  .canvas-container > canvas {
+    image-rendering: optimizeQuality;
+  }
+
+  .loading-text {
+    font-size: var(--font-xl, 1.25rem);
+  }
+
+  .error-screen h2 {
+    font-size: var(--font-2xl, 1.5rem);
   }
 }
 
-/* Animation keyframes */
+/* Tablets Portrait & Small Landscape (768px - 1024px) */
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+  .hero-3d-content {
+    /* Enhanced interaction for tablets */
+    touch-action: manipulation;
+  }
+
+  .canvas-container > canvas {
+    image-rendering: optimizeQuality;
+  }
+
+  .loading-text {
+    font-size: var(--font-xl, 1.25rem);
+  }
+
+  .error-screen {
+    padding: 2.5rem;
+  }
+
+  .error-screen h2 {
+    font-size: var(--font-2xl, 1.5rem);
+  }
+}
+
+/* Large Tablets Landscape (1024px - 1280px) */
+@media screen and (min-width: 1024px) and (max-width: 1280px) {
+  .hero-3d-container {
+    /* Full desktop-like performance */
+    will-change: filter, transform;
+  }
+
+  .canvas-container > canvas {
+    image-rendering: optimizeQuality;
+  }
+
+  .loading-text {
+    font-size: var(--font-2xl, 1.5rem);
+  }
+
+  .error-screen {
+    padding: 3rem;
+  }
+
+  .error-screen h2 {
+    font-size: var(--font-3xl, 1.875rem);
+  }
+
+  .error-screen button {
+    padding: 1rem 2rem;
+    font-size: var(--font-lg, 1.125rem);
+  }
+}
+
+/* Desktop and Large Screens (1280px+) */
+@media screen and (min-width: 1280px) {
+  .canvas-container > canvas {
+    image-rendering: optimizeQuality;
+  }
+
+  .loading-text {
+    font-size: var(--font-2xl, 1.5rem);
+  }
+
+  .error-screen h2 {
+    font-size: var(--font-3xl, 1.875rem);
+  }
+}
+
+/* ============ ORIENTATION-SPECIFIC OPTIMIZATIONS ============ */
+
+/* Mobile Landscape Optimization */
+@media screen and (max-width: 768px) and (orientation: landscape) and (max-height: 600px) {
+  .hero-3d-container {
+    /* Optimize for mobile landscape */
+    touch-action: manipulation;
+    height: 100vh;
+    /* Prevent address bar issues */
+    min-height: -webkit-fill-available;
+    min-height: fill-available;
+  }
+
+  .loading-screen,
+  .error-screen {
+    padding: 1rem;
+  }
+
+  .error-screen h2 {
+    font-size: var(--font-lg, 1.125rem);
+    margin-bottom: 0.5rem;
+  }
+
+  .error-screen button {
+    padding: 0.5rem 1rem;
+    font-size: var(--font-sm, 0.875rem);
+  }
+}
+
+/* Tablet Landscape Optimization */
+@media screen and (min-width: 768px) and (orientation: landscape) and (max-height: 800px) {
+  .hero-3d-container {
+    /* Full performance for tablet landscape */
+    will-change: filter, transform;
+  }
+
+  .canvas-container > canvas {
+    image-rendering: optimizeQuality;
+  }
+}
+
+/* ============ PERFORMANCE OPTIMIZATIONS ============ */
+
+/* High DPI / Retina Display Optimizations */
+@media screen and (-webkit-min-device-pixel-ratio: 2), 
+       screen and (min-resolution: 192dpi) {
+  .canvas-container > canvas {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .hero-3d-container,
+  .canvas-container,
+  .loading-screen {
+    transition: none;
+    animation: none;
+  }
+
+  .canvas-container {
+    opacity: 1;
+  }
+
+  .loading-screen.fade-out {
+    display: none;
+  }
+
+  /* Disable 3D transformations for reduced motion */
+  .hero-3d-viewport,
+  .hero-3d-content {
+    transform: none !important;
+    -webkit-transform: none !important;
+  }
+}
+
+/* Low performance device optimizations */
+@media screen and (max-width: 480px) and (-webkit-max-device-pixel-ratio: 1) {
+  .hero-3d-container {
+    /* Minimal GPU usage for low-end devices */
+    will-change: auto;
+    transform: none;
+    perspective: none;
+  }
+
+  .canvas-container > canvas {
+    image-rendering: optimizeSpeed;
+  }
+}
+
+/* Battery saving mode */
+@media (prefers-reduced-motion: reduce) and (max-width: 768px) {
+  .hero-3d-container {
+    will-change: auto;
+  }
+  
+  .canvas-container > canvas {
+    image-rendering: optimizeSpeed;
+  }
+}
+
+/* ============ ANIMATION KEYFRAMES ============ */
+
 @keyframes heroFadeIn {
   from {
     opacity: 0;
-    filter: blur(10px) brightness(1.2);
+    transform: scale(0.98);
   }
   to {
     opacity: 1;
-    filter: none;
+    transform: scale(1);
   }
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .hero-3d-container,
-  .hero-3d-viewport,
-  .hero-3d-content,
-  .loading-bar,
-  .error-screen button {
-    animation: none !important;
-    transition: none !important;
-  }
-
-  @keyframes heroFadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 } 

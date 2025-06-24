@@ -6,6 +6,26 @@
   --brand-light: rgba(150, 128, 101, 0.1);
   --chrome-glow: 0 0 20px rgba(150, 128, 101, 0.3);
   --accent-glow: 0 0 30px rgba(150, 128, 101, 0.2);
+  
+  /* Responsive Spacing Scale */
+  --spacing-xs: 0.25rem;   /* 4px */
+  --spacing-sm: 0.5rem;    /* 8px */
+  --spacing-md: 0.75rem;   /* 12px */
+  --spacing-lg: 1rem;      /* 16px */
+  --spacing-xl: 1.5rem;    /* 24px */
+  --spacing-2xl: 2rem;     /* 32px */
+  --spacing-3xl: 3rem;     /* 48px */
+  --spacing-4xl: 4rem;     /* 64px */
+  
+  /* Responsive Font Scale */
+  --font-xs: 0.75rem;      /* 12px */
+  --font-sm: 0.875rem;     /* 14px */
+  --font-base: 1rem;       /* 16px */
+  --font-lg: 1.125rem;     /* 18px */
+  --font-xl: 1.25rem;      /* 20px */
+  --font-2xl: 1.5rem;      /* 24px */
+  --font-3xl: 1.875rem;    /* 30px */
+  --font-4xl: 2.25rem;     /* 36px */
 }
 
 /* Global Styles */
@@ -15,11 +35,23 @@
   box-sizing: border-box;
 }
 
+html {
+  /* Prevent horizontal scrolling on mobile */
+  overflow-x: hidden;
+  /* Improve text rendering */
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 html, body {
   height: 100%;
   overflow: hidden;
   margin: 0;
   padding: 0;
+  /* Prevent rubber band scrolling on iOS */
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 body {
@@ -30,6 +62,13 @@ body {
   position: relative;
   margin: 0;
   padding: 0;
+  /* Prevent text selection on mobile */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 /* Global Modal Blur Effect - Applies to ALL modals */
@@ -58,6 +97,9 @@ body.modal-open > #root {
   justify-content: center;
   z-index: 9999;
   animation: modalFadeIn 0.3s ease;
+  /* Touch optimization */
+  touch-action: manipulation;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Universal Modal Content Styles */
@@ -75,6 +117,12 @@ body.modal-open > #root {
     0 2px 20px rgba(255, 255, 255, 0.1) inset;
   animation: modalSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   margin: auto;
+  /* Responsive sizing */
+  width: 90%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 @keyframes modalFadeIn {
@@ -93,8 +141,6 @@ body.modal-open > #root {
   }
 }
 
-/* Clean flat background - no overlay */
-
 /* App Container */
 .app {
   width: 100vw;
@@ -105,10 +151,147 @@ body.modal-open > #root {
   position: relative;
   margin: 0;
   padding: 0;
+  /* Performance optimizations */
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
+
 /* Hero 3D - Full Screen Centered */
 .hero-3d {
   width: 100vw;
   height: 100vh;
+}
+
+/* ============ RESPONSIVE BREAKPOINTS ============ */
+
+/* Mobile Phones (320px - 640px) */
+@media screen and (max-width: 640px) {
+  :root {
+    /* Adjusted spacing for mobile */
+    --spacing-lg: 0.875rem;    /* 14px */
+    --spacing-xl: 1.25rem;     /* 20px */
+    --spacing-2xl: 1.5rem;     /* 24px */
+    --spacing-3xl: 2rem;       /* 32px */
+    
+    /* Adjusted font sizes for mobile */
+    --font-base: 0.875rem;     /* 14px */
+    --font-lg: 1rem;           /* 16px */
+    --font-xl: 1.125rem;       /* 18px */
+    --font-2xl: 1.25rem;       /* 20px */
+    --font-3xl: 1.5rem;        /* 24px */
+  }
+
+  .modal-content,
+  .signup-modal {
+    width: 95%;
+    margin: var(--spacing-lg);
+    border-radius: 16px;
+    max-height: 85vh;
+  }
+  
+  .app {
+    /* Ensure no horizontal overflow on mobile */
+    overflow-x: hidden;
+  }
+}
+
+/* Small Mobile (320px - 480px) */
+@media screen and (max-width: 480px) {
+  :root {
+    /* Further reduced spacing for small mobile */
+    --spacing-lg: 0.75rem;     /* 12px */
+    --spacing-xl: 1rem;        /* 16px */
+    --spacing-2xl: 1.25rem;    /* 20px */
+  }
+  
+  .modal-content,
+  .signup-modal {
+    width: 96%;
+    margin: var(--spacing-md);
+    border-radius: 12px;
+  }
+}
+
+/* Tablets Portrait (640px - 768px) */
+@media screen and (min-width: 640px) and (max-width: 768px) {
+  .modal-content,
+  .signup-modal {
+    width: 85%;
+    max-width: 520px;
+  }
+}
+
+/* Tablets Portrait & Small Landscape (768px - 1024px) */
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+  .modal-content,
+  .signup-modal {
+    width: 75%;
+    max-width: 600px;
+  }
+}
+
+/* Large Tablets Landscape (1024px - 1280px) */
+@media screen and (min-width: 1024px) and (max-width: 1280px) {
+  .modal-content,
+  .signup-modal {
+    width: 65%;
+    max-width: 640px;
+  }
+}
+
+/* Desktop and Large Screens (1280px+) */
+@media screen and (min-width: 1280px) {
+  .modal-content,
+  .signup-modal {
+    width: 50%;
+    max-width: 720px;
+  }
+}
+
+/* Landscape-specific optimizations */
+@media screen and (orientation: landscape) and (max-height: 600px) {
+  .modal-content,
+  .signup-modal {
+    max-height: 95vh;
+    width: 80%;
+  }
+}
+
+/* High DPI / Retina Display Optimizations */
+@media screen and (-webkit-min-device-pixel-ratio: 2), 
+       screen and (min-resolution: 192dpi) {
+  body {
+    -webkit-font-smoothing: subpixel-antialiased;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .modal-content,
+  .signup-modal {
+    animation: none;
+  }
+  
+  .modal-overlay,
+  .signup-overlay {
+    animation: none;
+  }
+  
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .modal-content,
+  .signup-modal {
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    background: rgba(0, 0, 0, 0.9);
+  }
 }
 

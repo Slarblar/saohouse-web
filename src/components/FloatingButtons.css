@@ -36,6 +36,10 @@
   /* Entry animation */
   opacity: 0;
   animation: buttonBarFadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 1.5s forwards;
+  
+  /* Performance optimization */
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }
 
 .social-icon-btn,
@@ -75,6 +79,10 @@
   
   /* Subtle pulse animation */
   animation: subtlePulse 6s ease-in-out infinite;
+  
+  /* Performance optimization */
+  will-change: transform, background, box-shadow;
+  backface-visibility: hidden;
 }
 
 .social-icon-btn::before,
@@ -94,6 +102,7 @@
   );
   transform: skewX(-25deg);
   transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: left;
 }
 
 .social-icon-btn:hover::before,
@@ -135,6 +144,9 @@
   max-width: 480px;
   width: 90%;
   max-height: 90vh;
+  /* Performance optimization */
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }
 
 /* Close Button - for email modal */
@@ -198,6 +210,7 @@
 .close-button:hover,
 .close-button:focus {
   background: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   color: rgba(255, 255, 255, 0.95);
   transform: scale(1.05);
   outline: none;
@@ -207,59 +220,51 @@
 .close-button:active {
   transform: scale(0.95);
   transition: all 0.1s ease-out;
-  background: rgba(255, 255, 255, 0.3);
 }
 
 /* Signup Form */
 .signup-form h2 {
-  color: rgba(255, 255, 255, 0.95);
-  font-family: 'Conquer', 'Inter', system-ui, -apple-system, sans-serif;
-  font-size: 1.75rem;
+  font-size: var(--font-2xl, 1.5rem);
   font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
   margin-bottom: 0.75rem;
   text-align: center;
-  letter-spacing: 0.12em;
-  line-height: 1.2;
+  font-family: 'Conquer', system-ui, sans-serif;
+  letter-spacing: 0.5px;
 }
 
 .signup-form p {
+  font-size: var(--font-base, 1rem);
   color: rgba(255, 255, 255, 0.75);
-  font-family: 'Rinter', 'Inter', system-ui, -apple-system, sans-serif;
+  margin-bottom: 2rem;
   text-align: center;
-  margin-bottom: 2.5rem;
-  font-size: 1rem;
   line-height: 1.5;
-  max-width: 320px;
-  margin-left: auto;
-  margin-right: auto;
+  font-family: 'Rinter', system-ui, sans-serif;
 }
 
 .email-input-wrapper {
+  position: relative;
   display: flex;
-  gap: 0.75rem;
   align-items: center;
-  max-width: 380px;
-  margin: 0 auto;
+  margin-bottom: 1rem;
 }
 
 .email-input {
   flex: 1;
   padding: 1rem 1.25rem;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 14px;
-  color: rgba(255, 255, 255, 0.95);
-  font-size: 1rem;
+  padding-right: 4rem;
+  font-size: var(--font-base, 1rem);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.9);
   outline: none;
-  transition: all 0.3s ease;
-  font-family: 'Rinter', 'Inter', system-ui, -apple-system, sans-serif;
-  
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Rinter', system-ui, sans-serif;
   /* Touch optimization */
-  min-height: 48px;
   touch-action: manipulation;
   -webkit-appearance: none;
-  -webkit-tap-highlight-color: transparent;
+  appearance: none;
 }
 
 .email-input::placeholder {
@@ -267,376 +272,646 @@
 }
 
 .email-input:focus {
-  border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(25px);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   box-shadow: 
-    0 0 0 3px rgba(255, 255, 255, 0.15),
+    0 0 0 3px rgba(255, 255, 255, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
 }
 
 .submit-btn {
-  width: 48px;
-  height: 48px;
-  min-width: 48px;
-  min-height: 48px;
-  border-radius: 12px;
-  background: rgba(16, 185, 129, 0.2);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  color: #10b981;
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.85);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
-  flex-shrink: 0;
-  
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   /* Touch optimization */
   touch-action: manipulation;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-  -webkit-tap-highlight-color: transparent;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .submit-btn:hover:not(:disabled),
 .submit-btn:focus:not(:disabled) {
   background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.2) 0%,
-    rgba(255, 255, 255, 0.1) 25%,
-    rgba(255, 255, 255, 0.05) 50%,
-    rgba(255, 255, 255, 0.15) 75%,
-    rgba(255, 255, 255, 0.25) 100%
+    rgba(255, 255, 255, 0.25) 0%,
+    rgba(255, 255, 255, 0.15) 100%
   );
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: rgba(255, 255, 255, 0.95);
-  transform: translateY(-1px);
+  transform: translateY(-50%) scale(1.05);
   box-shadow: 
     0 4px 12px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
   outline: none;
 }
 
 .submit-btn:active:not(:disabled) {
-  transform: translateY(0px) scale(0.95);
+  transform: translateY(-50%) scale(0.98);
   transition: all 0.1s ease-out;
 }
 
 .submit-btn:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* Success State */
 .success-state {
   text-align: center;
-  padding: 1rem 0;
+  padding: 2rem 0;
 }
 
 .success-icon {
-  color: #10b981;
   margin-bottom: 1rem;
-  display: flex;
-  justify-content: center;
+  color: #10b981;
 }
 
 .success-state h3 {
-  color: rgba(255, 255, 255, 0.95);
-  font-family: 'Conquer', 'Inter', system-ui, -apple-system, sans-serif;
-  font-size: 1.25rem;
+  font-size: var(--font-xl, 1.25rem);
   font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
   margin-bottom: 0.5rem;
+  font-family: 'Conquer', system-ui, sans-serif;
 }
 
 .success-state p {
-  color: rgba(255, 255, 255, 0.7);
-  font-family: 'Rinter', 'Inter', system-ui, -apple-system, sans-serif;
-  font-size: 0.95rem;
+  font-size: var(--font-base, 1rem);
+  color: rgba(255, 255, 255, 0.75);
+  font-family: 'Rinter', system-ui, sans-serif;
 }
 
 /* Spinner */
 .spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(16, 185, 129, 0.3);
-  border-top: 2px solid #10b981;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid rgba(255, 255, 255, 0.8);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 
 /* Entry animation keyframes */
 @keyframes buttonBarFadeIn {
-  0% {
+  from {
     opacity: 0;
-    filter: blur(4px);
+    transform: translateX(-50%) translateY(20px);
   }
-  100% {
+  to {
     opacity: 1;
-    filter: blur(0);
+    transform: translateX(-50%) translateY(0);
   }
 }
 
 @keyframes subtlePulse {
   0%, 100% {
+    transform: scale(1);
     box-shadow: 
       inset 0 1px 0 rgba(255, 255, 255, 0.2),
       inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   }
   50% {
+    transform: scale(1.02);
     box-shadow: 
-      inset 0 1px 0 rgba(255, 255, 255, 0.25),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.05),
-      0 0 10px rgba(255, 255, 255, 0.1);
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+      0 0 15px rgba(255, 255, 255, 0.1);
   }
 }
 
-/* Mobile Responsive */
-@media (max-width: 768px) {
+/* ============ ENHANCED RESPONSIVE DESIGN ============ */
+
+/* Small Mobile (320px - 480px) */
+@media screen and (max-width: 480px) {
   .floating-buttons {
-    bottom: env(safe-area-inset-bottom, 1.25rem);
-    gap: 0.6rem;
-    padding: 0.75rem;
-    margin-bottom: 0.75rem; /* Add negative space for mobile */
-    /* Better mobile positioning */
-    width: auto;
-    max-width: 280px;
-    justify-content: center;
+    bottom: 1.5rem;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    /* Reduce animation intensity on mobile */
+    animation: buttonBarFadeIn 0.6s ease-out 1.2s forwards;
   }
 
   .social-icon-btn,
   .comms-btn {
-    width: 52px;
-    height: 52px;
-    min-width: 52px;
-    min-height: 52px;
-    /* Enhance touch targets */
-    border: 2px solid rgba(255, 255, 255, 0.25);
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    /* Simplified animations for better performance */
+    animation: none;
+  }
+
+  .social-icon-btn svg,
+  .comms-btn svg {
+    width: 18px;
+    height: 18px;
   }
 
   .modal-content {
-    padding: 1.5rem;
-    margin: 1rem;
+    padding: 2rem 1.5rem;
+    width: 96%;
+    margin: 0.5rem;
     border-radius: 16px;
-    max-width: 90vw;
-    /* Better scrolling on mobile */
     max-height: 85vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
   }
 
   .signup-form h2 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
+    font-size: var(--font-xl, 1.25rem);
+    margin-bottom: 0.5rem;
   }
 
   .signup-form p {
-    font-size: 0.95rem;
-    margin-bottom: 1.75rem;
-    padding: 0 0.5rem;
+    font-size: var(--font-sm, 0.875rem);
+    margin-bottom: 1.5rem;
   }
 
   .email-input {
-    padding: 1rem;
-    font-size: 16px; /* Prevent zoom on iOS */
-    min-height: 52px; /* Larger touch target */
-    border-radius: 12px;
+    padding: 0.875rem 1rem;
+    padding-right: 3.5rem;
+    font-size: var(--font-sm, 0.875rem);
   }
 
   .submit-btn {
-    width: 52px;
-    height: 52px;
-    min-width: 52px;
-    min-height: 52px;
-    border-radius: 12px;
+    width: 40px;
+    height: 40px;
+    right: 3px;
   }
 
   .close-btn,
   .close-button {
-    width: 52px;
-    height: 52px;
-    min-width: 52px;
-    min-height: 52px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
     top: 0.75rem;
     right: 0.75rem;
-    background: rgba(255, 255, 255, 0.2);
-    border: 2px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .close-btn svg,
+  .close-button svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .success-state {
+    padding: 1.5rem 0;
   }
 }
 
-/* Small mobile devices */
-@media (max-width: 480px) {
+/* Mobile Phones (480px - 640px) */
+@media screen and (min-width: 480px) and (max-width: 640px) {
   .floating-buttons {
-    bottom: env(safe-area-inset-bottom, 1.5rem);
-    gap: 0.5rem;
-    padding: 0.5rem;
-    margin-bottom: 1rem; /* Add extra negative space */
-    /* Center buttons better on small screens */
-    width: 100%;
-    justify-content: center;
+    bottom: 1.75rem;
+    gap: 0.625rem;
+    padding: 0.625rem;
   }
 
   .social-icon-btn,
   .comms-btn {
-    width: 48px;
-    height: 48px;
-    min-width: 48px;
-    min-height: 48px;
+    width: 46px;
+    height: 46px;
+    /* Reduced pulse animation */
+    animation: subtlePulse 8s ease-in-out infinite;
   }
 
   .modal-content {
-    padding: 1.25rem;
-    margin: 0.75rem;
-    max-width: 95vw;
-    /* Adjust for iOS safe areas */
-    margin-bottom: env(safe-area-inset-bottom, 0.75rem);
+    padding: 2.5rem 2rem;
+    width: 94%;
+    margin: 1rem;
+    border-radius: 18px;
   }
 
   .email-input {
-    font-size: 16px;
+    padding: 0.9375rem 1.125rem;
+    padding-right: 3.75rem;
+  }
+
+  .submit-btn {
+    width: 42px;
+    height: 42px;
+  }
+
+  .close-btn,
+  .close-button {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
+  }
+}
+
+/* Tablets Portrait (640px - 768px) */
+@media screen and (min-width: 640px) and (max-width: 768px) {
+  .floating-buttons {
+    bottom: 2rem;
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .modal-content {
+    padding: 3rem 2.5rem;
+    width: 85%;
+    max-width: 520px;
+    border-radius: 20px;
+  }
+
+  .signup-form h2 {
+    font-size: var(--font-2xl, 1.5rem);
+  }
+
+  .signup-form p {
+    font-size: var(--font-base, 1rem);
+  }
+
+  .email-input {
+    padding: 1rem 1.25rem;
+    padding-right: 4rem;
+  }
+
+  .submit-btn {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* Tablets Portrait & Small Landscape (768px - 1024px) */
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+  .floating-buttons {
+    bottom: 2.25rem;
+    gap: 0.875rem;
     padding: 0.875rem;
-    min-height: 48px;
+  }
+
+  .social-icon-btn,
+  .comms-btn {
+    width: 52px;
+    height: 52px;
+  }
+
+  .social-icon-btn svg,
+  .comms-btn svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .modal-content {
+    padding: 3.5rem 3rem;
+    width: 75%;
+    max-width: 600px;
+    border-radius: 22px;
+  }
+
+  .signup-form h2 {
+    font-size: var(--font-3xl, 1.875rem);
+  }
+
+  .email-input {
+    padding: 1.125rem 1.375rem;
+    padding-right: 4.25rem;
+    font-size: var(--font-lg, 1.125rem);
   }
 
   .submit-btn {
     width: 48px;
     height: 48px;
-    min-width: 48px;
-    min-height: 48px;
   }
 
   .close-btn,
   .close-button {
-    width: 48px;
-    height: 48px;
-    min-width: 48px;
-    min-height: 48px;
-    top: 0.5rem;
-    right: 0.5rem;
-    /* More visible on mobile */
-    background: rgba(255, 255, 255, 0.25);
-    border: 2px solid rgba(255, 255, 255, 0.4);
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
   }
 }
 
-/* Large tablet specific optimizations */
-@media (min-width: 769px) and (max-width: 1024px) {
+/* Large Tablets Landscape (1024px - 1280px) */
+@media screen and (min-width: 1024px) and (max-width: 1280px) {
   .floating-buttons {
-    bottom: 2rem;
-    gap: 0.75rem;
+    bottom: 2.5rem;
+    gap: 1rem;
+    padding: 1rem;
   }
 
   .social-icon-btn,
   .comms-btn {
     width: 56px;
     height: 56px;
-    min-width: 56px;
-    min-height: 56px;
+  }
+
+  .social-icon-btn svg,
+  .comms-btn svg {
+    width: 24px;
+    height: 24px;
   }
 
   .modal-content {
-    padding: 2rem;
-    max-width: 85vw;
+    padding: 4rem 3.5rem;
+    width: 65%;
+    max-width: 640px;
+    border-radius: 24px;
+  }
+
+  .signup-form h2 {
+    font-size: var(--font-3xl, 1.875rem);
+    margin-bottom: 1rem;
+  }
+
+  .signup-form p {
+    font-size: var(--font-lg, 1.125rem);
+    margin-bottom: 2.5rem;
+  }
+
+  .email-input {
+    padding: 1.25rem 1.5rem;
+    padding-right: 4.5rem;
+    font-size: var(--font-lg, 1.125rem);
+  }
+
+  .submit-btn {
+    width: 50px;
+    height: 50px;
   }
 
   .close-btn,
   .close-button {
-    width: 52px;
-    height: 52px;
-    min-width: 52px;
-    min-height: 52px;
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
     top: 1rem;
     right: 1rem;
   }
+
+  .success-state {
+    padding: 2.5rem 0;
+  }
 }
 
-/* Landscape mode optimizations */
-@media (max-width: 768px) and (orientation: landscape) {
+/* Desktop and Large Screens (1280px+) */
+@media screen and (min-width: 1280px) {
   .floating-buttons {
-    bottom: env(safe-area-inset-bottom, 0.75rem);
-    gap: 0.5rem;
-    margin-bottom: 0.5rem; /* Add negative space for landscape */
-    /* Adjust for landscape */
-    right: 1rem;
-    left: auto;
-    transform: none;
-    flex-direction: column;
+    bottom: 3rem;
+    gap: 1.125rem;
+    padding: 1.125rem;
+  }
+
+  .social-icon-btn,
+  .comms-btn {
+    width: 60px;
+    height: 60px;
+  }
+
+  .social-icon-btn svg,
+  .comms-btn svg {
+    width: 26px;
+    height: 26px;
   }
 
   .modal-content {
-    max-height: 80vh;
+    padding: 4.5rem 4rem;
+    width: 50%;
+    max-width: 720px;
+  }
+
+  .signup-form h2 {
+    font-size: var(--font-4xl, 2.25rem);
+  }
+
+  .signup-form p {
+    font-size: var(--font-xl, 1.25rem);
+  }
+
+  .email-input {
+    padding: 1.375rem 1.625rem;
+    padding-right: 5rem;
+    font-size: var(--font-xl, 1.25rem);
+  }
+
+  .submit-btn {
+    width: 52px;
+    height: 52px;
+  }
+}
+
+/* ============ ORIENTATION-SPECIFIC OPTIMIZATIONS ============ */
+
+/* Mobile Landscape Optimization */
+@media screen and (max-width: 768px) and (orientation: landscape) and (max-height: 600px) {
+  .floating-buttons {
+    bottom: 1rem;
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .social-icon-btn,
+  .comms-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .modal-content {
+    padding: 1.5rem;
+    max-height: 95vh;
+    width: 80%;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    /* Center in landscape */
-    margin: auto;
-    max-width: 85vw;
+  }
+
+  .signup-form h2 {
+    font-size: var(--font-lg, 1.125rem);
+    margin-bottom: 0.5rem;
+  }
+
+  .signup-form p {
+    font-size: var(--font-sm, 0.875rem);
+    margin-bottom: 1rem;
+  }
+
+  .email-input {
+    padding: 0.75rem 1rem;
+    padding-right: 3.25rem;
+  }
+
+  .submit-btn {
+    width: 36px;
+    height: 36px;
   }
 
   .close-btn,
   .close-button {
-    width: 50px;
-    height: 50px;
-    min-width: 50px;
-    min-height: 50px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
     top: 0.5rem;
     right: 0.5rem;
   }
+
+  .success-state {
+    padding: 1rem 0;
+  }
 }
 
-/* Social Icons Animations - CSS replacement for framer-motion */
+/* Tablet Landscape Optimization */
+@media screen and (min-width: 768px) and (orientation: landscape) and (max-height: 800px) {
+  .floating-buttons {
+    bottom: 1.5rem;
+  }
+
+  .modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ============ ACCESSIBILITY & PERFORMANCE ============ */
+
+/* High DPI / Retina Display Optimizations */
+@media screen and (-webkit-min-device-pixel-ratio: 2), 
+       screen and (min-resolution: 192dpi) {
+  .social-icon-btn svg,
+  .comms-btn svg {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .floating-buttons {
+    animation: none;
+    opacity: 1;
+  }
+
+  .social-icon-btn,
+  .comms-btn {
+    animation: none;
+    transition: none;
+  }
+
+  .social-icon-btn:hover,
+  .comms-btn:hover,
+  .submit-btn:hover {
+    transform: none;
+  }
+
+  .spinner {
+    animation: none;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    border-top: 2px solid rgba(255, 255, 255, 0.3);
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .social-icon-btn:hover,
+  .comms-btn:hover,
+  .close-btn:hover,
+  .close-button:hover,
+  .submit-btn:hover {
+    /* Reset hover styles for touch devices */
+    transform: none;
+    background: inherit;
+    border: inherit;
+    box-shadow: inherit;
+  }
+
+  .social-icon-btn:active,
+  .comms-btn:active {
+    transform: scale(0.95);
+  }
+}
+
+/* Battery saving mode */
+@media (prefers-reduced-motion: reduce) and (max-width: 768px) {
+  .floating-buttons,
+  .social-icon-btn,
+  .comms-btn {
+    will-change: auto;
+  }
+}
+
+/* Social Icons Component Styles */
 .social-icons {
+  position: fixed;
+  top: 50%;
+  right: 2rem;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  z-index: 1000;
+  animation: socialIconsSlideIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 2s forwards;
   opacity: 0;
-  transform: translateX(50px);
-  animation: socialIconsSlideIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 1.0s forwards;
 }
 
 .social-icon {
-  transform: scale(0);
-  animation: socialIconPop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) var(--animation-delay, 1.2s) forwards;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  
-  /* Touch optimization */
-  touch-action: manipulation;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-  -webkit-tap-highlight-color: transparent;
-  min-width: 44px;
-  min-height: 44px;
-  display: inline-flex;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--social-color, #fff);
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: socialIconPop 0.6s cubic-bezier(0.4, 0, 0.2, 1) var(--animation-delay, 0s) forwards;
+  transform: scale(0);
 }
 
 .social-icon:hover,
 .social-icon:focus {
-  transform: scale(1.2) rotate(5deg) translateY(-5px) !important;
+  background: var(--social-hover-color, rgba(255, 255, 255, 0.2));
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   outline: none;
 }
 
 .social-icon:active {
-  transform: scale(0.9) !important;
+  transform: scale(0.95);
 }
 
 @keyframes socialIconsSlideIn {
   from {
     opacity: 0;
-    transform: translateX(50px);
+    transform: translateY(-50%) translateX(100px);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateY(-50%) translateX(0);
   }
 }
 
 @keyframes socialIconPop {
   from {
     transform: scale(0);
+  }
+  60% {
+    transform: scale(1.2);
   }
   to {
     transform: scale(1);
