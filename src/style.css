@@ -26,10 +26,71 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: var(--brand-primary);
+  background: #000000;
   position: relative;
   margin: 0;
   padding: 0;
+}
+
+/* Global Modal Blur Effect - Applies to ALL modals */
+body.modal-open {
+  overflow: hidden;
+}
+
+body.modal-open > #root {
+  filter: blur(25px) brightness(0.2) saturate(50%);
+  transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Universal Modal Overlay Styles */
+.modal-overlay,
+.signup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(20px) saturate(150%) brightness(90%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%) brightness(90%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: modalFadeIn 0.3s ease;
+}
+
+/* Universal Modal Content Styles */
+.modal-content,
+.signup-modal {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(40px) saturate(180%) brightness(110%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(110%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 24px;
+  position: relative;
+  box-shadow: 
+    0 25px 50px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.15) inset,
+    0 2px 20px rgba(255, 255, 255, 0.1) inset;
+  animation: modalSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin: auto;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* Clean flat background - no overlay */

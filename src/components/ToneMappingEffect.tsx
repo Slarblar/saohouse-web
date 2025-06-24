@@ -18,7 +18,106 @@ import {
   Effect
 } from 'postprocessing';
 import * as THREE from 'three';
-// Custom RGB Chromatic Aberration Effect
+// Enhanced Motion Blur Effect with velocity tracking
+class MotionBlurEffect extends Effect {
+  private previousViewMatrix: THREE.Matrix4;
+  private previousProjectionMatrix: THREE.Matrix4;
+
+  constructor() {
+    const fragmentShader = `
+      uniform mat4 previousViewMatrix;
+      uniform mat4 previousProjectionMatrix;
+      uniform mat4 currentViewMatrix;
+      uniform mat4 currentProjectionMatrix;
+      uniform float intensity;
+      uniform float velocityScale;
+      uniform int samples;
+
+      void mainImage(const in vec4 inputColor, const in vec2 uv, const in float depth, out vec4 outputColor) {
+        // Calculate velocity based on camera movement
+        vec4 currentPosition = vec4(uv * 2.0 - 1.0, depth, 1.0);
+        vec4 previousPosition = previousProjectionMatrix * previousViewMatrix * 
+                               inverse(currentViewMatrix) * inverse(currentProjectionMatrix) * currentPosition;
+        previousPosition /= previousPosition.w;
+        
+        vec2 velocity = (currentPosition.xy - previousPosition.xy) * velocityScale * intensity;
+        float velocityLength = length(velocity);
+        
+        // Apply motion blur based on velocity
+        vec3 color = vec3(0.0);
+        float sampleWeight = 1.0 / float(samples);
+        
+        for (int i = 0; i < samples; i++) {
+          float t = float(i) / float(samples - 1);
+          vec2 sampleUV = uv + velocity * (t - 0.5);
+          
+          // Ensure UV coordinates are within bounds
+          if (sampleUV.x >= 0.0 && sampleUV.x <= 1.0 && sampleUV.y >= 0.0 && sampleUV.y <= 1.0) {
+            color += texture2D(inputBuffer, sampleUV).rgb * sampleWeight;
+          } else {
+            color += inputColor.rgb * sampleWeight;
+          }
+        }
+        
+        // Mix between original and motion blurred based on velocity
+        float blurFactor = smoothstep(0.0, 0.1, velocityLength);
+        outputColor = vec4(mix(inputColor.rgb, color, blurFactor), inputColor.a);
+      }
+    `;
+
+    super("MotionBlur", fragmentShader, {
+      blendFunction: BlendFunction.NORMAL,
+      uniforms: new Map<string, THREE.Uniform>([
+        ["previousViewMatrix", new THREE.Uniform(new THREE.Matrix4())],
+        ["previousProjectionMatrix", new THREE.Uniform(new THREE.Matrix4())],
+        ["currentViewMatrix", new THREE.Uniform(new THREE.Matrix4())],
+        ["currentProjectionMatrix", new THREE.Uniform(new THREE.Matrix4())],
+        ["intensity", new THREE.Uniform(1.0)],
+        ["velocityScale", new THREE.Uniform(1.0)],
+        ["samples", new THREE.Uniform(8)]
+      ])
+    });
+
+    this.previousViewMatrix = new THREE.Matrix4();
+    this.previousProjectionMatrix = new THREE.Matrix4();
+  }
+
+  updateMatrices(camera: THREE.Camera) {
+    this.uniforms.get("currentViewMatrix")!.value.copy(camera.matrixWorldInverse);
+    this.uniforms.get("currentProjectionMatrix")!.value.copy(camera.projectionMatrix);
+    this.uniforms.get("previousViewMatrix")!.value.copy(this.previousViewMatrix);
+    this.uniforms.get("previousProjectionMatrix")!.value.copy(this.previousProjectionMatrix);
+
+    this.previousViewMatrix.copy(camera.matrixWorldInverse);
+    this.previousProjectionMatrix.copy(camera.projectionMatrix);
+  }
+
+  get intensity() {
+    return this.uniforms.get("intensity")!.value;
+  }
+
+  set intensity(value: number) {
+    this.uniforms.get("intensity")!.value = value;
+  }
+
+  get velocityScale() {
+    return this.uniforms.get("velocityScale")!.value;
+  }
+
+  set velocityScale(value: number) {
+    this.uniforms.get("velocityScale")!.value = value;
+  }
+
+  get samples() {
+    return this.uniforms.get("samples")!.value;
+  }
+
+  set samples(value: number) {
+    this.uniforms.get("samples")!.value = value;
+  }
+}
+
+// Enhanced RGB Chromatic Aberration Effect with better blur
 class RGBChromaticAberrationEffect extends Effect {
   constructor() {
     const fragmentShader = `
@@ -26,54 +125,78 @@ class RGBChromaticAberrationEffect extends Effect {
       uniform vec2 greenOffset;
       uniform vec2 blueOffset;
       uniform float blur;
+      uniform float intensity;
+      uniform float radialIntensity;
 
       void mainImage(const in vec4 inputColor, const in vec2 uv, const in float depth, out vec4 outputColor) {
+        // Calculate distance from center for radial effects
+        vec2 center = vec2(0.5, 0.5);
+        float distanceFromCenter = length(uv - center);
+        
         // Use depth to determine if we should apply chromatic aberration
-        // Closer objects (lower depth values) get less aberration
-        // This keeps the main SAO logo sharp while affecting the background
-        float depthFactor = smoothstep(0.98, 0.995, depth); // Adjust these values to fine-tune
+        float depthFactor = smoothstep(0.98, 0.995, depth);
+        
+        // Apply radial modulation for more realistic lens aberration
+        float radialFactor = 1.0 + radialIntensity * distanceFromCenter * distanceFromCenter;
         
         if (depthFactor < 0.1) {
-          // Very close objects (SAO logo) - keep original with minimal effect
           outputColor = inputColor;
           return;
         }
         
-        // Apply chromatic aberration based on depth
-        vec2 scaledRedOffset = redOffset * depthFactor;
-        vec2 scaledGreenOffset = greenOffset * depthFactor;
-        vec2 scaledBlueOffset = blueOffset * depthFactor;
+        // Scale offsets based on depth and radial distance
+        vec2 scaledRedOffset = redOffset * depthFactor * radialFactor * intensity;
+        vec2 scaledGreenOffset = greenOffset * depthFactor * radialFactor * intensity;
+        vec2 scaledBlueOffset = blueOffset * depthFactor * radialFactor * intensity;
         
-        // Sample each color channel with its own scaled offset
-        float r = texture2D(inputBuffer, uv + scaledRedOffset).r;
-        float g = texture2D(inputBuffer, uv + scaledGreenOffset).g;
-        float b = texture2D(inputBuffer, uv + scaledBlueOffset).b;
+        vec3 color = vec3(0.0);
         
-        // Combine the separated channels
-        vec3 color = vec3(r, g, b);
-        
-        // Apply blur effect with proper sampling
+        // Enhanced blur with multiple sample rings for better quality
         if (blur > 0.0) {
           vec2 texelSize = 1.0 / vec2(textureSize(inputBuffer, 0));
-          vec3 blurred = vec3(0.0);
-          float blurRadius = blur * 20.0; // Increase multiplier for more noticeable effect
+          float blurRadius = blur * 150.0; // Tripled multiplier for much more intense blur
           
-          // 3x3 blur kernel for performance
-          for (int x = -1; x <= 1; x++) {
-            for (int y = -1; y <= 1; y++) {
-              vec2 offset = vec2(float(x), float(y)) * texelSize * blurRadius;
+          vec3 blurred = vec3(0.0);
+          float totalWeight = 0.0;
+          
+          // Multi-ring sampling for better blur quality
+          for (int ring = 0; ring <= 3; ring++) {
+            float ringRadius = float(ring) * blurRadius * 0.25;
+            int samples = ring == 0 ? 1 : ring * 8;
+            
+            for (int i = 0; i < samples; i++) {
+              float angle = float(i) * 6.28318 / float(samples);
+              vec2 offset = vec2(cos(angle), sin(angle)) * ringRadius * texelSize;
+              
+              float weight = 1.0 / (1.0 + float(ring) * 0.5); // Falloff for outer rings
               
               float rBlur = texture2D(inputBuffer, uv + scaledRedOffset + offset).r;
               float gBlur = texture2D(inputBuffer, uv + scaledGreenOffset + offset).g;
               float bBlur = texture2D(inputBuffer, uv + scaledBlueOffset + offset).b;
               
-              blurred += vec3(rBlur, gBlur, bBlur);
+              blurred += vec3(rBlur, gBlur, bBlur) * weight;
+              totalWeight += weight;
             }
           }
-          blurred /= 9.0; // Average of 3x3 samples
           
-          // Mix between sharp chromatic aberration and blurred version
-          color = mix(color, blurred, blur * 100.0); // Strong blur mixing
+          if (totalWeight > 0.0) {
+            blurred /= totalWeight;
+          }
+          
+          // Strong blur mixing with falloff based on distance
+          float blurMix = blur * 500.0 * (1.0 + distanceFromCenter * 3.0);
+          color = mix(vec3(
+            texture2D(inputBuffer, uv + scaledRedOffset).r,
+            texture2D(inputBuffer, uv + scaledGreenOffset).g,
+            texture2D(inputBuffer, uv + scaledBlueOffset).b
+          ), blurred, clamp(blurMix, 0.0, 1.0));
+        } else {
+          // Standard chromatic aberration without blur
+          color = vec3(
+            texture2D(inputBuffer, uv + scaledRedOffset).r,
+            texture2D(inputBuffer, uv + scaledGreenOffset).g,
+            texture2D(inputBuffer, uv + scaledBlueOffset).b
+          );
         }
         
         // Mix between original and chromatic aberration based on depth
@@ -89,7 +212,9 @@ class RGBChromaticAberrationEffect extends Effect {
         ["redOffset", new THREE.Uniform(new THREE.Vector2(0.01, 0.0))],
         ["greenOffset", new THREE.Uniform(new THREE.Vector2(0.0, 0.0))],
         ["blueOffset", new THREE.Uniform(new THREE.Vector2(-0.01, 0.0))],
-        ["blur", new THREE.Uniform(0.0)]
+        ["blur", new THREE.Uniform(0.0)],
+        ["intensity", new THREE.Uniform(1.0)],
+        ["radialIntensity", new THREE.Uniform(1.0)]
       ])
     });
   }
@@ -124,6 +249,22 @@ class RGBChromaticAberrationEffect extends Effect {
 
   set blur(value: number) {
     this.uniforms.get("blur")!.value = value;
+  }
+
+  get intensity() {
+    return this.uniforms.get("intensity")!.value;
+  }
+
+  set intensity(value: number) {
+    this.uniforms.get("intensity")!.value = value;
+  }
+
+  get radialIntensity() {
+    return this.uniforms.get("radialIntensity")!.value;
+  }
+
+  set radialIntensity(value: number) {
+    this.uniforms.get("radialIntensity")!.value = value;
   }
 }
 
@@ -230,6 +371,7 @@ export interface BloomSettings {
 }
 
 export interface ChromaticAberrationSettings {
+  enabled: boolean;
   offset: [number, number];
   redOffset: [number, number];
   greenOffset: [number, number];
@@ -237,6 +379,8 @@ export interface ChromaticAberrationSettings {
   radialModulation: boolean;
   modulationOffset: number;
   blur: number;
+  intensity: number;
+  radialIntensity: number;
 }
 
 export interface FilmGrainSettings {
@@ -269,6 +413,13 @@ export interface DepthOfFieldSettings {
   enabled: boolean;
 }
 
+export interface MotionBlurSettings {
+  intensity: number;
+  velocityScale: number;
+  samples: number;
+  enabled: boolean;
+}
+
 export interface GodRaysSettings {
   intensity: number;
   density: number;
@@ -286,6 +437,25 @@ export interface LensDistortionSettings {
   enabled: boolean;
 }
 
+export interface HDRISettings {
+  enabled: boolean;
+  url: string | null;
+  intensity: number;
+  rotation: number;
+  background: boolean;
+}
+
+export interface MaterialSettings {
+  roughness: number;
+  metalness: number;
+  reflectivity: number;
+  envMapIntensity: number;
+  clearcoat: number;
+  clearcoatRoughness: number;
+  ior: number;
+  color: string;
+}
+
 export interface PostProcessingSettings {
   toneMapping: ToneMappingSettings;
   bloom: BloomSettings;
@@ -295,7 +465,10 @@ export interface PostProcessingSettings {
   blur: BlurSettings;
   depthOfField: DepthOfFieldSettings;
   lensDistortion: LensDistortionSettings;
-  godRays?: GodRaysSettings;
+  motionBlur: MotionBlurSettings;
+  godRays: GodRaysSettings;
+  hdri: HDRISettings;
+  material: MaterialSettings;
 }
 
 interface PostProcessingEffectsProps {
@@ -307,7 +480,10 @@ interface PostProcessingEffectsProps {
   blur: BlurSettings;
   depthOfField: DepthOfFieldSettings;
   lensDistortion: LensDistortionSettings;
-  godRays?: GodRaysSettings;
+  motionBlur: MotionBlurSettings;
+  godRays: GodRaysSettings;
+  hdri: HDRISettings;
+  material: MaterialSettings;
 }
 
 const PostProcessingEffects: React.FC<PostProcessingEffectsProps> = ({
@@ -319,9 +495,20 @@ const PostProcessingEffects: React.FC<PostProcessingEffectsProps> = ({
   blur,
   depthOfField,
   lensDistortion,
+  motionBlur,
   godRays,
+  hdri,
+  material,
 }) => {
   const { gl, scene, camera } = useThree();
+  
+  // Safety check: ensure motionBlur is never undefined
+  const safeMotionBlur = motionBlur || {
+    intensity: 0.8,
+    velocityScale: 1.0,
+    samples: 16,
+    enabled: true
+  };
   const composerRef = useRef<EffectComposer | null>(null);
   const blurPassRef = useRef<GaussianBlurPass | null>(null);
   const effectsRef = useRef<{
@@ -329,6 +516,7 @@ const PostProcessingEffects: React.FC<PostProcessingEffectsProps> = ({
     bloom: CoreBloomEffect;
     chromaticAberration: RGBChromaticAberrationEffect;
     lensDistortion: LensDistortionEffect;
+    motionBlur: MotionBlurEffect;
     noise: NoiseEffect;
     ssao: SSAOEffect;
     depthOfField?: DepthOfFieldEffect;
@@ -428,6 +616,12 @@ const PostProcessingEffects: React.FC<PostProcessingEffectsProps> = ({
       lensDistortion.center?.[1] || 0.5
     );
 
+    // Motion blur effect
+    const motionBlurEffect = new MotionBlurEffect();
+    motionBlurEffect.intensity = safeMotionBlur.intensity || 1.0;
+    motionBlurEffect.velocityScale = safeMotionBlur.velocityScale || 1.0;
+    motionBlurEffect.samples = safeMotionBlur.samples || 8;
+
     let depthOfFieldEffect: DepthOfFieldEffect | undefined;
     if (depthOfField?.enabled) {
       depthOfFieldEffect = new DepthOfFieldEffect(camera, {
@@ -440,24 +634,10 @@ const PostProcessingEffects: React.FC<PostProcessingEffectsProps> = ({
 
     let godRaysEffect: GodRaysEffect | undefined;
     if (godRays?.enabled) {
-      // Create a simple mesh for god rays light source
-      const lightSource = new THREE.Mesh(
-        new THREE.SphereGeometry(0.1),
-        new THREE.MeshBasicMaterial({ color: 0xffffff })
-      );
-      lightSource.position.set(2, 1, -1);
-      scene.add(lightSource);
-      
-      godRaysEffect = new GodRaysEffect(camera, lightSource, {
-        height: 480,
-        kernelSize: KernelSize.SMALL,
-        density: godRays.density,
-        decay: godRays.decay,
-        weight: godRays.weight,
-        exposure: godRays.exposure,
-        samples: 60,
-        clampMax: 1.0,
-      });
+      // God Rays effect disabled to prevent unwanted sphere rendering
+      // The sphere mesh was creating a visible white sphere in the scene
+      console.log('God Rays effect requested but disabled to prevent sphere artifacts');
+      godRaysEffect = undefined;
     }
 
     // Store effects for updates
@@ -466,6 +646,7 @@ const PostProcessingEffects: React.FC<PostProcessingEffectsProps> = ({
       bloom: bloomEffect,
       chromaticAberration: chromaticAberrationEffect,
       lensDistortion: lensDistortionEffect,
+      motionBlur: motionBlurEffect,
       noise: noiseEffect,
       ssao: ssaoEffect,
       depthOfField: depthOfFieldEffect,
@@ -477,6 +658,7 @@ const PostProcessingEffects: React.FC<PostProcessingEffectsProps> = ({
     const effects = [
       ssaoEffect, // Depth-based effects first
       depthOfFieldEffect,
+      safeMotionBlur.enabled ? motionBlurEffect : null, // Motion blur for dynamic scenes
       lensDistortion.enabled ? lensDistortionEffect : null, // Lens distortion when enabled
       chromaticAberrationEffect, // RGB chromatic aberration
       bloomEffect, // HDR bloom
@@ -522,20 +704,42 @@ const PostProcessingEffects: React.FC<PostProcessingEffectsProps> = ({
     if (!effectsRef.current) return;
 
     const { chromaticAberration: ca } = effectsRef.current;
-    ca.redOffset.set(
-      chromaticAberration.redOffset?.[0] || 0.015, 
-      chromaticAberration.redOffset?.[1] || 0.0
-    );
-    ca.greenOffset.set(
-      chromaticAberration.greenOffset?.[0] || 0.0, 
-      chromaticAberration.greenOffset?.[1] || 0.0
-    );
-    ca.blueOffset.set(
-      chromaticAberration.blueOffset?.[0] || -0.015, 
-      chromaticAberration.blueOffset?.[1] || 0.0
-    );
-    ca.blur = chromaticAberration.blur || 0.0;
+    
+    if (chromaticAberration.enabled) {
+      ca.redOffset.set(
+        chromaticAberration.redOffset?.[0] || 0.0, 
+        chromaticAberration.redOffset?.[1] || 0.0
+      );
+      ca.greenOffset.set(
+        chromaticAberration.greenOffset?.[0] || 0.0, 
+        chromaticAberration.greenOffset?.[1] || 0.0
+      );
+      ca.blueOffset.set(
+        chromaticAberration.blueOffset?.[0] || 0.0, 
+        chromaticAberration.blueOffset?.[1] || 0.0
+      );
+      ca.blur = chromaticAberration.blur || 0.0;
+      ca.intensity = chromaticAberration.intensity || 1.0;
+      ca.radialIntensity = chromaticAberration.radialIntensity || 1.0;
+    } else {
+      // When disabled, set all values to zero
+      ca.redOffset.set(0.0, 0.0);
+      ca.greenOffset.set(0.0, 0.0);
+      ca.blueOffset.set(0.0, 0.0);
+      ca.blur = 0.0;
+      ca.intensity = 0.0;
+      ca.radialIntensity = 0.0;
+    }
   }, [chromaticAberration]);
+
+  useEffect(() => {
+    if (!effectsRef.current) return;
+
+    const { motionBlur: mb } = effectsRef.current;
+    mb.intensity = safeMotionBlur.intensity || 1.0;
+    mb.velocityScale = safeMotionBlur.velocityScale || 1.0;
+    mb.samples = safeMotionBlur.samples || 8;
+  }, [safeMotionBlur]);
 
   useEffect(() => {
     if (!effectsRef.current) return;
@@ -613,6 +817,13 @@ const PostProcessingEffects: React.FC<PostProcessingEffectsProps> = ({
       window.removeEventListener('resize', handleResize);
     };
   }, [gl]);
+
+  // Update motion blur matrices each frame
+  useFrame(() => {
+    if (effectsRef.current && safeMotionBlur.enabled) {
+      effectsRef.current.motionBlur.updateMatrices(camera);
+    }
+  }, 0); // High priority for matrix updates
 
   // Render using the composer
   useFrame(() => {

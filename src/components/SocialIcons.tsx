@@ -33,6 +33,9 @@ const SocialIcons: React.FC = () => {
             '--social-hover-color': social.hoverColor,
             '--animation-delay': `${1.2 + index * 0.1}s`,
           } as React.CSSProperties}
+          aria-label={`Follow us on ${social.name}`}
+          role="button"
+          tabIndex={0}
         >
           <social.icon size={24} />
           <span className="social-tooltip">{social.name}</span>

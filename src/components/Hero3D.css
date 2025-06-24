@@ -1,23 +1,257 @@
-/* Hero3D Container */
+/* Base styles */
 .hero-3d-container {
-  width: 100vw;
+  width: 100%;
   height: 100vh;
+  background-color: #000;
   position: relative;
+  overflow: hidden;
+  display: block;
+  /* Performance optimizations */
+  will-change: filter;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
+  -webkit-perspective: 1000;
+}
+
+/* Canvas container with fade-in animation */
+.canvas-container {
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.canvas-container.visible {
+  opacity: 1;
+}
+
+/* Force canvas to be visible and properly sized */
+.canvas-container > canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  outline: none;
+}
+
+.hero-3d-viewport {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #000; /* Ensure black background */
+  /* Touch handling */
+  touch-action: pan-x pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  pointer-events: none;
+  /* Performance optimizations */
+  will-change: filter, transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  isolation: isolate;
+}
+
+.hero-3d-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+  /* Performance optimizations */
+  will-change: transform, filter;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Loading screen with fade-out animation */
+.loading-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0;
-  padding: 0;
+  background-color: #000;
+  color: #fff;
+  z-index: 1000;
+  font-family: system-ui, -apple-system, sans-serif;
+  opacity: 1;
+  transition: opacity 0.3s ease-in-out;
 }
 
-/* Canvas entry animation */
-@keyframes heroFadeIn {
-  0% {
-    opacity: 0;
-    filter: blur(8px);
+.loading-screen.fade-out {
+  opacity: 0;
+}
+
+.loading-text {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #fff;
+}
+
+/* Error screen */
+.error-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #000;
+  color: #fff;
+  z-index: 1000;
+  padding: 2rem;
+  text-align: center;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.error-screen h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: #ff4444;
+}
+
+.error-screen button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.error-screen button:hover {
+  background-color: #1d4ed8;
+}
+
+/* Stats panel (from @react-three/drei) */
+.hero-3d-container > div:last-child {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+}
+
+/* Force visibility of 3D scene */
+.hero-3d-container,
+.hero-3d-container * {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Responsive styles - Mobile First approach */
+@media (max-width: 480px) {
+  .hero-3d-container {
+    /* Mobile optimizations */
+    display: block;
+    position: fixed;
+    touch-action: manipulation;
+    -webkit-backface-visibility: hidden;
+    -webkit-perspective: 1000;
+    -webkit-transform: translate3d(0,0,0);
+    transform: translate3d(0,0,0);
   }
-  100% {
+
+  .hero-3d-viewport {
+    position: fixed;
+    transform: translate3d(0,0,0);
+    -webkit-transform: translate3d(0,0,0);
+  }
+  
+  .hero-3d-content {
+    position: fixed;
+    transform: translate3d(0,0,0);
+    -webkit-transform: translate3d(0,0,0);
+    -webkit-perspective: 1000;
+    perspective: 1000;
+  }
+
+  .loading-progress {
+    width: 160px;
+  }
+
+  .error-screen h2 {
+    font-size: 1.25rem;
+  }
+}
+
+/* Tablet */
+@media (min-width: 481px) and (max-width: 768px) {
+  .hero-3d-container {
+    touch-action: manipulation;
+  }
+
+  .hero-3d-viewport {
+    transform: translate3d(0,0,0);
+    -webkit-transform: translate3d(0,0,0);
+  }
+
+  .hero-3d-content {
+    will-change: transform, filter;
+    transform: translateZ(0);
+  }
+}
+
+/* Large tablet / Small laptop */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .hero-3d-content {
+    will-change: transform;
+    transform: translateZ(0);
+  }
+}
+
+/* Landscape mode */
+@media (max-width: 768px) and (orientation: landscape) {
+  .hero-3d-container {
+    height: 100%;
+  }
+
+  .loading-progress {
+    width: 180px;
+  }
+}
+
+/* Animation keyframes */
+@keyframes heroFadeIn {
+  from {
+    opacity: 0;
+    filter: blur(10px) brightness(1.2);
+  }
+  to {
     opacity: 1;
-    filter: blur(0);
+    filter: none;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .hero-3d-container,
+  .hero-3d-viewport,
+  .hero-3d-content,
+  .loading-bar,
+  .error-screen button {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  @keyframes heroFadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 } 

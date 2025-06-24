@@ -16,6 +16,16 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
 
+  // Apply global modal blur effect
+  React.useEffect(() => {
+    document.body.classList.add('modal-open');
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, []);
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
     
@@ -62,7 +72,13 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
     return (
       <div className="signup-overlay" onClick={onClose}>
         <div className="signup-modal" onClick={e => e.stopPropagation()}>
-          <button className="close-button" onClick={onClose}>
+          <button 
+            className="close-button" 
+            onClick={onClose}
+            type="button"
+            aria-label="Close modal"
+            tabIndex={0}
+          >
             <X size={20} />
           </button>
           
@@ -84,7 +100,13 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
   return (
     <div className="signup-overlay" onClick={onClose}>
       <div className="signup-modal" onClick={e => e.stopPropagation()}>
-        <button className="close-button" onClick={onClose}>
+        <button 
+          className="close-button" 
+          onClick={onClose}
+          type="button"
+          aria-label="Close modal"
+          tabIndex={0}
+        >
           <X size={20} />
         </button>
         
@@ -106,6 +128,12 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   className={errors.email ? 'error' : ''}
                   disabled={isSubmitting}
+                  aria-label="Email address"
+                  autoComplete="email"
+                  inputMode="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck="false"
                 />
               </div>
               {errors.email && <div className="error-message">{errors.email}</div>}
@@ -121,6 +149,11 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
                   onChange={(e) => handleInputChange('firstName', e.target.value)}
                   className={errors.firstName ? 'error' : ''}
                   disabled={isSubmitting}
+                  aria-label="First name"
+                  autoComplete="given-name"
+                  autoCapitalize="words"
+                  autoCorrect="off"
+                  spellCheck="false"
                 />
               </div>
               {errors.firstName && <div className="error-message">{errors.firstName}</div>}
@@ -135,6 +168,12 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
                   value={formData.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
                   disabled={isSubmitting}
+                  aria-label="Phone number (optional)"
+                  autoComplete="tel"
+                  inputMode="tel"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck="false"
                 />
               </div>
             </div>
@@ -143,6 +182,8 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
               type="submit" 
               className="submit-button"
               disabled={isSubmitting}
+              aria-label={isSubmitting ? "Submitting..." : "Join SaoHouse"}
+              tabIndex={0}
             >
               {isSubmitting ? (
                 <>
