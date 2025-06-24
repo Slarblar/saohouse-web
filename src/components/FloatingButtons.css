@@ -399,11 +399,14 @@
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .floating-buttons {
-    bottom: 1.5rem;
-    gap: 0.5rem;
-    padding: 0.5rem;
-    /* Ensure buttons are easily tappable */
-    touch-action: manipulation;
+    bottom: env(safe-area-inset-bottom, 1.25rem);
+    gap: 0.6rem;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem; /* Add negative space for mobile */
+    /* Better mobile positioning */
+    width: auto;
+    max-width: 280px;
+    justify-content: center;
   }
 
   .social-icon-btn,
@@ -469,9 +472,10 @@
 /* Small mobile devices */
 @media (max-width: 480px) {
   .floating-buttons {
-    bottom: env(safe-area-inset-bottom, 1rem);
+    bottom: env(safe-area-inset-bottom, 1.5rem);
     gap: 0.5rem;
     padding: 0.5rem;
+    margin-bottom: 1rem; /* Add extra negative space */
     /* Center buttons better on small screens */
     width: 100%;
     justify-content: center;
@@ -556,6 +560,7 @@
   .floating-buttons {
     bottom: env(safe-area-inset-bottom, 0.75rem);
     gap: 0.5rem;
+    margin-bottom: 0.5rem; /* Add negative space for landscape */
     /* Adjust for landscape */
     right: 1rem;
     left: auto;

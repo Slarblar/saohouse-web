@@ -1,10 +1,10 @@
 {
   "version": "1.0",
-  "timestamp": "2025-06-23T23:06:10.593Z",
+  "timestamp": "2025-06-24T07:57:51.401Z",
   "settings": {
     "toneMapping": {
-      "mode": 3,
-      "exposure": 1,
+      "mode": 6,
+      "exposure": 1.6,
       "whitePoint": 21,
       "middleGrey": 0.35,
       "adaptation": 1.2
@@ -42,7 +42,7 @@
     },
     "filmGrain": {
       "intensity": 0.5,
-      "opacity": 0.04
+      "opacity": 0.02
     },
     "ssao": {
       "intensity": 0.75,
@@ -68,7 +68,7 @@
     "lensDistortion": {
       "enabled": true,
       "barrelDistortion": 0,
-      "chromaticAberration": 0.0055,
+      "chromaticAberration": 0.0167,
       "vignette": 0.65,
       "center": [
         0.5,
@@ -97,14 +97,15 @@
       "intensity": 1
     },
     "material": {
-      "roughness": 0.219,
+      "roughness": 0.176,
       "metalness": 1,
       "reflectivity": 0.87,
       "envMapIntensity": 2.4,
       "clearcoat": 0.9,
       "clearcoatRoughness": 0.39,
-      "ior": 2.49,
-      "color": "#7a7a7a"
+      "ior": 2.13,
+      "color": "#7a7a7a",
+      "toneMapped": true
     }
   }
 }

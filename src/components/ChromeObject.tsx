@@ -12,6 +12,7 @@ interface MaterialSettings {
   clearcoatRoughness: number;
   ior: number;
   color: string;
+  toneMapped: boolean;
 }
 
 interface ChromeObjectProps {
@@ -36,6 +37,7 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({ materialSettings }) => {
     clearcoatRoughness: 0.01,
     ior: 2.4,
     color: '#cccccc',
+    toneMapped: true,
   };
 
   const activeMaterialSettings = materialSettings || defaultMaterialSettings;
@@ -45,20 +47,21 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({ materialSettings }) => {
     const updateScaleAndPosition = () => {
       const width = window.innerWidth;
       
-      // Desktop detection: width >= 1024px (large tablets and up)
-      const isDesktop = width >= 1024;
-      
-      if (isDesktop) {
-        // 25% bigger on desktop (0.05 * 1.25 = 0.0625)
+      if (width >= 1024) {
+        // Desktop: width >= 1024px
         setScale(0.0625);
-        // Fine-tuned positioning for desktop: right and slightly up for perfect centering
         setPosition([0.225, 0.15, 0]);
         console.log('🖥️ Desktop detected - using larger scale and fine-tuned positioning:', 0.0625, [0.225, 0.15, 0]);
+      } else if (width >= 768) {
+        // Large tablet: 768px to 1023px (20% smaller: 0.03825 × 0.8 = 0.0306)
+        setScale(0.0306);
+        setPosition([-1.3, 0, 0]); // 1.3 units to the left (0.3 + 1.0)
+        console.log('📱 Large Tablet detected - using smaller scale and far left offset:', 0.0306, [-1.3, 0, 0]);
       } else {
-        // Default scale and position for mobile/tablet
-        setScale(0.05);
-        setPosition([0, 0, 0]);
-        console.log('📱 Mobile/Tablet detected - using default scale and position:', 0.05, [0, 0, 0]);
+        // Mobile/small tablet: < 768px
+        setScale(0.03825);
+        setPosition([0.05, 0, 0]);
+        console.log('📱 Mobile/Small Tablet detected - using smaller scale and slight right offset:', 0.03825, [0.05, 0, 0]);
       }
     };
 
@@ -90,7 +93,7 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({ materialSettings }) => {
             ior: activeMaterialSettings.ior,
             reflectivity: activeMaterialSettings.reflectivity,
             envMapIntensity: activeMaterialSettings.envMapIntensity,
-            toneMapped: false
+            toneMapped: activeMaterialSettings.toneMapped
           });
         }
       });

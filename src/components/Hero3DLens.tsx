@@ -115,6 +115,7 @@ const defaultSettings: PostProcessingSettings = {
     clearcoatRoughness: 0.01,
     ior: 2.4,
     color: '#cccccc',
+    toneMapped: true,
   },
 };
 
@@ -137,8 +138,11 @@ class LensDistortionEffect extends Effect {
         
         // Chromatic aberration (lens distortion type)
         float aberrationIntensity = chromaticAberration * distance;
-        vec2 redOffset = vec2(aberrationIntensity, 0.0);
-        vec2 blueOffset = vec2(-aberrationIntensity, 0.0);
+        
+        // Create radial offsets based on direction from center
+        vec2 direction = normalize(centeredUV);
+        vec2 redOffset = direction * aberrationIntensity * 1.2;    // Red further out (longer wavelength)
+        vec2 blueOffset = direction * aberrationIntensity * -0.8;  // Blue closer in (shorter wavelength)
         
         // Sample with aberration offsets
         float r = texture2D(inputBuffer, distortedUV + redOffset).r;
@@ -437,6 +441,18 @@ const AnimatedOrbitControls: React.FC = () => {
   );
 };
 
+// Component to control renderer's tone mapping exposure
+const ToneMappingExposure: React.FC<{ exposure: number }> = ({ exposure }) => {
+  const { gl } = useThree();
+  
+  useEffect(() => {
+    gl.toneMappingExposure = exposure;
+    console.log('🎨 Renderer tone mapping exposure set to:', exposure);
+  }, [gl, exposure]);
+  
+  return null;
+};
+
 const Hero3DLens: React.FC = () => {
   // Load saved settings from localStorage or use defaults
   const [settings, setSettings] = useState<PostProcessingSettings>(() => {
@@ -495,6 +511,11 @@ const Hero3DLens: React.FC = () => {
     console.log('✨ HDRI Animation enabled for luxury look');
     return () => console.log('🎬 Hero3DLens component unmounted');
   }, []);
+
+  // Debug tone mapping changes
+  useEffect(() => {
+    console.log('🎨 Tone mapping settings changed:', settings.toneMapping);
+  }, [settings.toneMapping]);
 
   return (
     <div className="hero-3d-container">
@@ -582,6 +603,7 @@ const Hero3DLens: React.FC = () => {
         />
         
         <Suspense fallback={null}>
+          <ToneMappingExposure exposure={settings.toneMapping.exposure} />
           <ChromeObject materialSettings={settings.material} />
           <AnimatedOrbitControls />
           
@@ -591,6 +613,7 @@ const Hero3DLens: React.FC = () => {
               mode={settings.toneMapping.mode}
               exposure={settings.toneMapping.exposure}
               whitePoint={settings.toneMapping.whitePoint}
+              middleGrey={settings.toneMapping.middleGrey}
               adaptationRate={settings.toneMapping.adaptation}
             />
             

@@ -454,6 +454,7 @@ export interface MaterialSettings {
   clearcoatRoughness: number;
   ior: number;
   color: string;
+  toneMapped: boolean;
 }
 
 export interface PostProcessingSettings {
@@ -568,16 +569,16 @@ const PostProcessingEffects: React.FC<PostProcessingEffectsProps> = ({
     
     // Set initial values for RGB channels with safe fallbacks
     chromaticAberrationEffect.redOffset.set(
-      chromaticAberration.redOffset?.[0] || 0.015, 
-      chromaticAberration.redOffset?.[1] || 0.0
+      chromaticAberration.redOffset?.[0] || 0.006,
+      chromaticAberration.redOffset?.[1] || 0.006
     );
     chromaticAberrationEffect.greenOffset.set(
-      chromaticAberration.greenOffset?.[0] || 0.0, 
+      chromaticAberration.greenOffset?.[0] || 0.0,
       chromaticAberration.greenOffset?.[1] || 0.0
     );
     chromaticAberrationEffect.blueOffset.set(
-      chromaticAberration.blueOffset?.[0] || -0.015, 
-      chromaticAberration.blueOffset?.[1] || 0.0
+      chromaticAberration.blueOffset?.[0] || -0.006,
+      chromaticAberration.blueOffset?.[1] || -0.006
     );
     chromaticAberrationEffect.blur = chromaticAberration.blur || 0.0;
 

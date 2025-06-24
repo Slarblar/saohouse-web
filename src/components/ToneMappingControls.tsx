@@ -105,6 +105,7 @@ export interface MaterialSettings {
   clearcoatRoughness: number;
   ior: number;
   color: string;
+  toneMapped: boolean;
 }
 
 export interface PostProcessingSettings {
@@ -215,6 +216,7 @@ const PostProcessingControls: React.FC<PostProcessingControlsProps> = ({
       clearcoatRoughness: 0.01,
       ior: 2.4,
       color: '#cccccc',
+      toneMapped: true,
     },
   };
 
@@ -552,15 +554,46 @@ const PostProcessingControls: React.FC<PostProcessingControlsProps> = ({
         
         {/* Enable/Disable Toggle */}
         <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+          <label style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            color: '#555', 
+            fontSize: '11px',
+            cursor: 'pointer',
+            gap: '8px'
+          }}>
             <input
               type="checkbox"
               checked={settings.chromaticAberration?.enabled || false}
               onChange={(e) => updateChromaticAberrationSettings({ enabled: e.target.checked })}
-              style={{ marginRight: '8px' }}
+              style={{ marginRight: '0px' }}
             />
-            Enable RGB Chromatic Aberration
+            Enable Chromatic Aberration
           </label>
+          <button
+            onClick={() => updateChromaticAberrationSettings({
+              enabled: true,
+              redOffset: [0.006, 0.006],      // Red offset radially outward
+              greenOffset: [0.0, 0.0],        // Green stays centered
+              blueOffset: [-0.006, -0.006],   // Blue offset radially inward
+              blur: 0.001,
+              intensity: 1.0,
+              radialIntensity: 2.0,
+            })}
+            style={{
+              marginTop: '5px',
+              padding: '4px 8px',
+              backgroundColor: '#10b981',
+              color: 'white',
+              border: 'none',
+              borderRadius: '3px',
+              fontSize: '9px',
+              cursor: 'pointer',
+              width: '100%'
+            }}
+          >
+            ✨ Set Radial Preset
+          </button>
         </div>
 
         {/* Reset to Zero Button */}
@@ -1664,6 +1697,28 @@ const PostProcessingControls: React.FC<PostProcessingControlsProps> = ({
           />
         </div>
 
+        <div style={{ marginBottom: '10px' }}>
+          <label style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            color: '#555', 
+            fontSize: '11px',
+            cursor: 'pointer',
+            gap: '6px'
+          }}>
+            <input
+              type="checkbox"
+              checked={settings.material.toneMapped}
+              onChange={(e) => updateMaterial({ toneMapped: e.target.checked })}
+              style={{ marginRight: '0px' }}
+            />
+            Enable Tone Mapping
+          </label>
+          <div style={{ fontSize: '9px', color: '#888', marginTop: '2px', marginLeft: '16px' }}>
+            Apply post-processing tone mapping to material
+          </div>
+        </div>
+
         <button
           onClick={() => updateMaterial({
             roughness: 0.01,
@@ -1674,6 +1729,7 @@ const PostProcessingControls: React.FC<PostProcessingControlsProps> = ({
             clearcoatRoughness: 0.01,
             ior: 2.4,
             color: '#cccccc',
+            toneMapped: true,
           })}
           style={{
             width: '100%',
