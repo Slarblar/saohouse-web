@@ -483,8 +483,6 @@ interface PostProcessingEffectsProps {
   lensDistortion: LensDistortionSettings;
   motionBlur: MotionBlurSettings;
   godRays: GodRaysSettings;
-  hdri: HDRISettings;
-  material: MaterialSettings;
 }
 
 const PostProcessingEffects: React.FC<PostProcessingEffectsProps> = ({
@@ -498,8 +496,6 @@ const PostProcessingEffects: React.FC<PostProcessingEffectsProps> = ({
   lensDistortion,
   motionBlur,
   godRays,
-  hdri,
-  material,
 }) => {
   const { gl, scene, camera } = useThree();
   

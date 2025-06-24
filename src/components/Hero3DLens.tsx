@@ -9,7 +9,6 @@ import {
   Vignette,
   BrightnessContrast,
   Noise,
-  SSAO,
   N8AO
 } from '@react-three/postprocessing';
 import { Effect, BlendFunction } from 'postprocessing';
@@ -264,11 +263,6 @@ const AnimatedEnvironment: React.FC<{
       environmentRotation={[0, currentRotation, 0]}
     />
   );
-};
-
-// Luxury easing function - ease out cubic for smooth deceleration
-const easeOutCubic = (t: number): number => {
-  return 1 - Math.pow(1 - t, 3);
 };
 
 // Even smoother easing function for ultra-stable movement
