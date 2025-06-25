@@ -19,6 +19,9 @@ const API_ENDPOINT = '/api/subscribe';
  */
 export async function subscribeToNewsletter(email: string): Promise<SubscriptionResponse> {
   try {
+    console.log('Attempting to subscribe:', email);
+    console.log('API endpoint:', API_ENDPOINT);
+    
     const response = await fetch(API_ENDPOINT, {
       method: 'POST',
       headers: {
@@ -27,7 +30,21 @@ export async function subscribeToNewsletter(email: string): Promise<Subscription
       body: JSON.stringify({ email } satisfies SubscriptionRequest),
     });
 
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
+
+    // Check if response is JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      console.error('Non-JSON response received:', contentType);
+      return {
+        success: false,
+        error: `Server returned invalid response format. Status: ${response.status}`,
+      };
+    }
+
     const data: SubscriptionResponse = await response.json();
+    console.log('Response data:', data);
     
     // Return the response data regardless of HTTP status
     // The serverless function handles proper error formatting
@@ -36,10 +53,17 @@ export async function subscribeToNewsletter(email: string): Promise<Subscription
   } catch (error) {
     console.error('Network error during subscription:', error);
     
-    // Return a user-friendly error for network failures
+    // Provide more specific error information
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      return {
+        success: false,
+        error: 'Unable to connect to server. Please check your internet connection.',
+      };
+    }
+    
     return {
       success: false,
-      error: 'Network error. Please check your connection and try again.',
+      error: `Network error: ${error instanceof Error ? error.message : 'Unknown error'}`,
     };
   }
 }
