@@ -48,7 +48,7 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
   const blurAnimation = useBlurInAnimation(2.5); // 2.5 seconds for quick, consistent fade-in
   
   // Get responsive configuration with loading callback
-  const { scale, position: visualOffset, deviceType, orientation } = useResponsive3D(
+  const { scale, position: visualOffset } = useResponsive3D(
     undefined, // use default settings
     true,      // enable mobile reload
     onResponsiveChange // pass the loading callback
