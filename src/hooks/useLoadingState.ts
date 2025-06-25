@@ -25,7 +25,7 @@ export const useLoadingState = () => {
     };
   }, []);
 
-  const completeInitialLoading = useCallback((message = 'Loading complete') => {
+  const completeInitialLoading = useCallback(() => {
     if (!initialLoadingRef.current) return;
     
     initialLoadingRef.current = false;
