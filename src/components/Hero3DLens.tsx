@@ -566,11 +566,10 @@ const Hero3DLens: React.FC = () => {
         console.error('Failed to load settings:', error);
       } finally {
         setIsLoadingSettings(false);
-        // Complete the initial loading with coordinated timing for Canvas animation
-        // This ensures Canvas fade-in (2.1s total) can start and loading overlay dismisses smoothly
+        // Give Canvas time to render, then dismiss loading overlay
         setTimeout(() => {
           completeInitialLoading();
-        }, 2000); // 2.0 seconds - coordinated with Canvas animation timing
+        }, 1500); // Longer delay to ensure everything is ready
       }
     };
 
@@ -660,8 +659,7 @@ const Hero3DLens: React.FC = () => {
       )}
 
       {/* Canvas always renders, loading overlay handles the transition */}
-      {(
-        <Canvas
+      <Canvas
           camera={{ position: [0, 0, 5], fov: 50 }}
                   style={{ 
           width: '100vw', 
@@ -790,7 +788,6 @@ const Hero3DLens: React.FC = () => {
           </EffectComposer>
         </Suspense>
       </Canvas>
-      )}
     </div>
   );
 };

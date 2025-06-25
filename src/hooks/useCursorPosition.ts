@@ -27,7 +27,6 @@ export const useCursorPosition = (): CursorPosition => {
       const targetNormalizedY = -(y / window.innerHeight) * 2 + 1
 
       const now = performance.now()
-      const deltaTime = now - lastMoveTimeRef.current
       lastMoveTimeRef.current = now
 
       // Cancel previous animation frame

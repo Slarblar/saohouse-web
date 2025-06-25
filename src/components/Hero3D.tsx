@@ -348,7 +348,7 @@ const Hero3D: React.FC = () => {
             
             <Suspense fallback={null}>
               <ChromeObject 
-                followCursor={!deviceInfo.isMobile} // Disable cursor following on mobile
+                followCursor={!deviceInfo.isMobile} // Disable cursor following on mobile for better performance
                 followIntensity={deviceInfo.isMobile ? 0 : 0.5} 
               />
               <ResponsiveCameraController deviceInfo={deviceInfo} />

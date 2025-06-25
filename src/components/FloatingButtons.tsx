@@ -1,45 +1,10 @@
 import React, { useState } from 'react';
-import { Mail, X, Send } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import './FloatingButtons.css';
+import SubscriptionModal from './SubscriptionModal';
 
 const FloatingButtons: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [email, setEmail] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-
-  // Apply glass morphism blur effect when modal is open
-  React.useEffect(() => {
-    if (isModalOpen) {
-      document.body.classList.add('modal-open');
-    } else {
-      document.body.classList.remove('modal-open');
-    }
-    
-    // Cleanup on unmount
-    return () => {
-      document.body.classList.remove('modal-open');
-    };
-  }, [isModalOpen]);
-
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    // Simulate signup
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    setSubmitted(true);
-    setIsSubmitting(false);
-    
-    // Close modal after success
-    setTimeout(() => {
-      setIsModalOpen(false);
-      setSubmitted(false);
-      setEmail('');
-    }, 2000);
-  };
 
   return (
     <>
@@ -103,69 +68,11 @@ const FloatingButtons: React.FC = () => {
 
 
 
-      {/* Signup Modal */}
-      {isModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button 
-              className="close-btn"
-              onClick={() => setIsModalOpen(false)}
-              aria-label="Close modal"
-              type="button"
-              tabIndex={0}
-            >
-              <X size={16} />
-            </button>
-            
-            {submitted ? (
-              <div className="success-state">
-                <div className="success-icon">
-                  <Send size={32} />
-                </div>
-                <h3>Welcome aboard!</h3>
-                <p>We'll be in touch soon.</p>
-              </div>
-            ) : (
-              <div className="signup-form">
-                <h2>Stay Connected</h2>
-                <p>Join our community for updates and exclusive content</p>
-                
-                <form onSubmit={handleSubmit}>
-                  <div className="email-input-wrapper">
-                    <input
-                      type="email"
-                      placeholder="your.email@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="email-input"
-                      aria-label="Email address"
-                      autoComplete="email"
-                      inputMode="email"
-                      autoCapitalize="none"
-                      autoCorrect="off"
-                      spellCheck="false"
-                    />
-                    <button 
-                      type="submit" 
-                      className={`submit-btn ${isSubmitting ? 'submitting' : ''}`}
-                      disabled={isSubmitting}
-                      aria-label={isSubmitting ? "Submitting..." : "Submit email"}
-                      tabIndex={0}
-                    >
-                      {isSubmitting ? (
-                        <div className="spinner"></div>
-                      ) : (
-                        <Send size={16} />
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Premium Subscription Modal */}
+      <SubscriptionModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </>
   );
 };

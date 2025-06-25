@@ -9,7 +9,6 @@ interface LoadingOverlayProps {
 
 const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ 
   isVisible, 
-  message = 'Loading...', 
   type = 'initial' 
 }) => {
   const [shouldRender, setShouldRender] = React.useState(isVisible);

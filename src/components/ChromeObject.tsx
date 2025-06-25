@@ -45,7 +45,7 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
   const childGroupRef = useRef<THREE.Group>(null);
   
   // Blur-in animation hook with fast, consistent timing
-  const blurAnimation = useBlurInAnimation(3.5); // 3.5 seconds for quick, consistent fade-in
+  const blurAnimation = useBlurInAnimation(2.5); // 2.5 seconds for quick, consistent fade-in
   
   // Get responsive configuration with loading callback
   const { scale, position: visualOffset, deviceType, orientation } = useResponsive3D(
@@ -62,7 +62,7 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
   const momentumRef = useRef(new THREE.Vector3(0, 0, 0));
   const easingFactorRef = useRef(0);
   
-  // Reset animation state
+  // Reset animation state - ensure everything starts at perfect zero
   const lastCursorMoveRef = useRef(Date.now());
   const isResettingRef = useRef(false);
   const resetCompleteTimeRef = useRef(0);
@@ -79,42 +79,19 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   };
   
-  const easeOutQuart = (t: number): number => {
-    return 1 - Math.pow(1 - t, 4);
-  };
+
   
-  // Test if cursor hook is working at all
-  useEffect(() => {
-    console.log('🖱️ Cursor position updated:', cursorPosition);
-  }, [cursorPosition.normalizedX, cursorPosition.normalizedY]);
-  
-  // Enhanced debugging for cursor following activation
-  useEffect(() => {
-    console.log('🎯 Cursor following conditions:', {
-      followCursor,
-      enableCursorFollowing,
-      animationStateIsAnimating: blurAnimation.isAnimating,
-      smoothAnimationMultiplier: animationActivationRef.current,
-      isFullyLoaded: enableCursorFollowing
-    });
-  }, [followCursor, enableCursorFollowing, blurAnimation.isAnimating]);
+  // Minimal debugging - removed excessive re-renders
   
   // Load the logo model and track loading state
   const gltf = useGLTF('/objects/sao-logo.glb');
   const [isModelLoaded, setIsModelLoaded] = useState(false);
   const [presentationStarted, setPresentationStarted] = useState(false);
   
-  // Debug GLB loading
-  useEffect(() => {
-    console.log('🔍 GLB Hook State:', { 
-      scene: !!gltf.scene, 
-      sceneType: gltf.scene?.type,
-      fullGltf: gltf 
-    });
-    if (gltf.scene) {
-      console.log('🎯 Scene object details:', gltf.scene);
-    }
-  }, [gltf]);
+  // Preload the model for consistent loading
+  useGLTF.preload('/objects/sao-logo.glb');
+  
+  // Model loaded when gltf.scene exists
   
   // Default material settings
   const defaultMaterialSettings: MaterialSettings = {
@@ -130,6 +107,19 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
   };
 
   const activeMaterialSettings = materialSettings || defaultMaterialSettings;
+
+  // Initialize cursor movement timer on first load and ensure zero rotation start
+  useEffect(() => {
+    if (lastCursorMoveRef.current === 0) {
+      lastCursorMoveRef.current = Date.now(); // Initialize with current time
+    }
+    
+    // Ensure parent group starts with zero rotation (default state)
+    if (parentGroupRef.current) {
+      parentGroupRef.current.rotation.set(0, 0, 0);
+      console.log('🎯 3D logo initialized with zero rotation (default state)');
+    }
+  }, []);
 
   // Track cursor movement for reset logic with enhanced sensitivity
   useEffect(() => {
@@ -154,7 +144,6 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
         
         // Reset momentum when cursor moves again
         if (easingFactorRef.current < 0.1) {
-          console.log('🎈 Cursor reactivated - resetting momentum');
           momentumRef.current.set(0, 0, 0);
         }
       }
@@ -163,12 +152,12 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
 
 
 
-  // Track when model is loaded but don't start animation yet
+  // Track when model is loaded reliably
   useEffect(() => {
     if (gltf.scene && !isModelLoaded) {
-      console.log('🔍 3D Model loaded in background, waiting for presentation cue');
+      console.log('🔍 3D Model loaded successfully, ready for presentation');
       
-      // Mark model as loaded but don't start animation yet
+      // Mark as loaded immediately for reliable timing
       setIsModelLoaded(true);
       
       // Notify parent component that model is ready
@@ -178,73 +167,55 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
     }
   }, [gltf.scene, isModelLoaded, onModelLoaded]);
 
-  // Start simple fade-in presentation with smooth delay (after loading overlay is gone) - ONLY ONCE
+  // Single effect to handle presentation start - eliminates race conditions
   useEffect(() => {
     if (startPresentation && isModelLoaded && !presentationStarted) {
-      console.log('🎭 Starting smooth 3D fade-in presentation with extended delay (ONE TIME ONLY)');
+      console.log('🎭 Starting smooth 3D fade-in presentation (SINGLE TRIGGER)');
       setPresentationStarted(true);
-      
-      // Minimal delay to ensure loading overlay completely disappears and canvas is ready
-      setTimeout(() => {
-        blurAnimation.start();
-        console.log('🎭 Starting 3.5-second fast blur-in sequence');
-      }, 200); // Minimal delay for immediate, consistent appearance
+      blurAnimation.start();
     }
   }, [startPresentation, isModelLoaded, presentationStarted, blurAnimation]);
 
-  // Apply materials and handle responsive settings - memoized to prevent recreations
+  // Apply materials and handle responsive settings - run only once when model loads
   const materialRef = useRef<THREE.MeshPhysicalMaterial | null>(null);
+  const materialsInitialized = useRef(false);
   
   useEffect(() => {
-    console.log('📦 Logo model mounted');
-    if (childGroupRef.current && gltf.scene) {
-      console.log(`📱 ${deviceType} ${orientation} - scale: ${scale}, position:`, visualOffset);
+    if (gltf.scene && !materialsInitialized.current) {
+      console.log('📦 Logo model setup - ONE TIME ONLY');
       
       // Center the model geometry at origin to fix any internal offset
       const box = new THREE.Box3().setFromObject(gltf.scene);
       const center = box.getCenter(new THREE.Vector3());
       
-      // Apply the offset to center the model + manual adjustment for funky center point
-      gltf.scene.position.set(-center.x + 0.8, -center.y, -center.z);
-      console.log(`🎯 Model centered with manual adjustment: offset=[${-center.x + 0.8}, ${-center.y}, ${-center.z}]`);
+      // Apply the offset to center the model properly at origin
+      gltf.scene.position.set(-center.x, -center.y, -center.z);
+      console.log(`🎯 Model centered at origin: offset=[${-center.x}, ${-center.y}, ${-center.z}]`);
       
-      // Apply materials to all meshes - reuse existing material if possible
+      // Create material once and apply to all meshes
+      materialRef.current = new THREE.MeshPhysicalMaterial({
+        color: activeMaterialSettings.color,
+        metalness: activeMaterialSettings.metalness,
+        roughness: activeMaterialSettings.roughness,
+        clearcoat: activeMaterialSettings.clearcoat,
+        clearcoatRoughness: activeMaterialSettings.clearcoatRoughness,
+        ior: activeMaterialSettings.ior,
+        reflectivity: activeMaterialSettings.reflectivity,
+        envMapIntensity: activeMaterialSettings.envMapIntensity,
+        toneMapped: activeMaterialSettings.toneMapped,
+        transparent: true, // Always enable transparency for smooth animations
+        opacity: 1.0
+      });
+      
+      // Apply materials to all meshes - ONE TIME SETUP
       gltf.scene.traverse((child: THREE.Object3D) => {
         if (child instanceof THREE.Mesh) {
-          // Dispose old material to prevent memory leaks
-          if (child.material && 'dispose' in child.material) {
-            child.material.dispose();
-          }
-          
-          // Create new material only when needed
-          if (!materialRef.current) {
-            materialRef.current = new THREE.MeshPhysicalMaterial({
-              color: activeMaterialSettings.color,
-              metalness: activeMaterialSettings.metalness,
-              roughness: activeMaterialSettings.roughness,
-              clearcoat: activeMaterialSettings.clearcoat,
-              clearcoatRoughness: activeMaterialSettings.clearcoatRoughness,
-              ior: activeMaterialSettings.ior,
-              reflectivity: activeMaterialSettings.reflectivity,
-              envMapIntensity: activeMaterialSettings.envMapIntensity,
-              toneMapped: activeMaterialSettings.toneMapped
-            });
-          } else {
-            // Update existing material properties instead of recreating
-            materialRef.current.color.set(activeMaterialSettings.color);
-            materialRef.current.metalness = activeMaterialSettings.metalness;
-            materialRef.current.roughness = activeMaterialSettings.roughness;
-            materialRef.current.clearcoat = activeMaterialSettings.clearcoat;
-            materialRef.current.clearcoatRoughness = activeMaterialSettings.clearcoatRoughness;
-            materialRef.current.ior = activeMaterialSettings.ior;
-            materialRef.current.reflectivity = activeMaterialSettings.reflectivity;
-            materialRef.current.envMapIntensity = activeMaterialSettings.envMapIntensity;
-            materialRef.current.needsUpdate = true;
-          }
-          
           child.material = materialRef.current;
         }
       });
+      
+      materialsInitialized.current = true;
+      console.log('✅ Materials initialized - no more recreations');
     }
     
     // Cleanup function
@@ -253,8 +224,9 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
         materialRef.current.dispose();
         materialRef.current = null;
       }
+      materialsInitialized.current = false;
     };
-  }, [gltf.scene, activeMaterialSettings]);
+  }, [gltf.scene]); // Only depend on scene, not settings
 
   // Gradual animation activation state for smooth handoff
   const animationActivationRef = useRef<number>(0); // 0 = fully suppressed, 1 = fully active
@@ -262,12 +234,12 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
   const cursorFollowingActivatedRef = useRef<boolean>(false); // Flag to log activation only once
 
   // Dynamic timing constants for smooth transitions (no hardcoded values)
-  const CURSOR_ACTIVATION_DELAY = 1.5; // Reduced from 2.0 for quicker response
-  const CURSOR_RAMP_DURATION = 0.8; // Reduced from 1.0 for smoother activation
-  const RESET_DELAY = 1000; // Reduced from 1200 for more responsive reset
-  const COOLDOWN_DURATION = 300; // Reduced from 500 for smoother reactivation
-  const ANIMATION_ACTIVATION_SPEED = 1.0; // Faster activation (was 0.67)
-  const ANIMATION_DEACTIVATION_SPEED = 2.5; // Faster deactivation (was 2.0)
+  const CURSOR_ACTIVATION_DELAY = 0.3; // Even faster activation for immediate response
+  const CURSOR_RAMP_DURATION = 0.6; // Reduced for smoother activation
+  const RESET_DELAY = 3000; // Increased to give cursor following more time to work
+  const COOLDOWN_DURATION = 300; // Reduced for quicker reactivation
+  const ANIMATION_ACTIVATION_SPEED = 1.5; // Faster activation
+  const ANIMATION_DEACTIVATION_SPEED = 3.0; // Faster deactivation
 
   // Throttle frame updates to prevent excessive calculations
   const lastFrameTime = useRef<number>(0);
@@ -296,6 +268,7 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
         // During blur-in, keep animations fully suppressed and reset cursor delay timer
         animationActivationRef.current = Math.max(animationActivationRef.current - delta * ANIMATION_DEACTIVATION_SPEED, 0);
         cursorActivationDelayRef.current = 0; // Reset cursor delay timer during blur-in
+        cursorFollowingActivatedRef.current = false; // Reset activation flag
       } else {
         // After blur-in completes, gradually activate base animations with smooth timing
         animationActivationRef.current = Math.min(animationActivationRef.current + delta * ANIMATION_ACTIVATION_SPEED, 1.0);
@@ -335,8 +308,8 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
       // Check if cursor following should be enabled with smooth activation timing
       const isCursorFollowingReady = cursorActivationDelayRef.current >= CURSOR_ACTIVATION_DELAY;
       
-      // Simplified condition with smooth timing  
-      const simpleTestCondition = enableCursorFollowing && !animationState.isAnimating && isCursorFollowingReady;
+      // Simplified condition with smooth timing - more reliable check
+      const simpleTestCondition = followCursor && enableCursorFollowing && !animationState.isAnimating && isCursorFollowingReady && !isResettingRef.current;
       
       // Calculate base animation state (always running for smooth blending)
       let baseRotX = 0;
@@ -363,7 +336,6 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
       if (followCursor && simpleTestCondition) {
         // Log when cursor following first becomes active (once)
         if (!cursorFollowingActivatedRef.current) {
-          console.log('🖱️ Cursor orbital animation now blending in smoothly...');
           cursorFollowingActivatedRef.current = true;
         }
         
@@ -480,26 +452,11 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
       // Apply consistent scale (no sudden jumping)
       childGroupRef.current.scale.setScalar(scale * breathingScale * finalScale);
       
-      // Apply consistent opacity transitions to prevent flicker
-      gltf.scene.traverse((child: THREE.Object3D) => {
-        if (child instanceof THREE.Mesh && child.material) {
-          if (Array.isArray(child.material)) {
-            child.material.forEach(mat => {
-              if ('opacity' in mat) {
-                mat.opacity = finalOpacity;
-                // Keep transparency enabled during animation for smooth transitions
-                mat.transparent = finalOpacity < 0.99; // Only disable when nearly opaque
-                mat.alphaTest = 0.01; // Prevent z-fighting issues
-              }
-            });
-          } else if ('opacity' in child.material) {
-            child.material.opacity = finalOpacity;
-            // Keep transparency enabled during animation for smooth transitions
-            child.material.transparent = finalOpacity < 0.99; // Only disable when nearly opaque
-            child.material.alphaTest = 0.01; // Prevent z-fighting issues
-          }
-        }
-      });
+      // Apply opacity only to the shared material (no traversal needed)
+      if (materialRef.current) {
+        materialRef.current.opacity = finalOpacity;
+        // Transparency is always enabled from initialization
+      }
       
       // Reduced debug logging to prevent memory pressure
       // Only log significant state changes, not regular updates
@@ -530,8 +487,8 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
   return (
     <group ref={parentGroupRef} position={[0, 0, 0]}>
       <group ref={childGroupRef} scale={scale} position={visualOffset}>
-        {/* Show model with fade-in effect */}
-        {presentationStarted && <primitive object={gltf.scene} />}
+        {/* Always render model - opacity controls visibility */}
+        {gltf.scene && <primitive object={gltf.scene} />}
       </group>
     </group>
   );

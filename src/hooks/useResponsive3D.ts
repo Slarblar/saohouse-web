@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useDeviceDetection, type DeviceType, type Orientation } from './useDeviceDetection';
+import { useDeviceDetection } from './useDeviceDetection';
 
 interface ResponsiveConfig {
   scale: number;

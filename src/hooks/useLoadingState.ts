@@ -26,11 +26,9 @@ export const useLoadingState = () => {
     
     // Coordinated transition for ultra-smooth UX
     // This timing coordinates with Canvas fade-in and blur-in animation
-    setTimeout(() => {
-      setLoadingState(prev => ({ ...prev, isLoading: false }));
-      initialLoadingRef.current = false;
-      console.log('✨ Loading overlay dismissed - Canvas and 3D model ready');
-    }, 200); // Short delay to ensure Canvas is ready
+    setLoadingState(prev => ({ ...prev, isLoading: false }));
+    initialLoadingRef.current = false;
+    console.log('✨ Loading overlay dismissed - Canvas and 3D model ready');
   };
 
   // Handle responsive transitions with improved timing
@@ -39,7 +37,7 @@ export const useLoadingState = () => {
     
     // Clear any existing transition timeout
     if (transitionTimeoutRef.current) {
-      clearTimeout(transitionTimeoutRef.current);
+      window.clearTimeout(transitionTimeoutRef.current);
     }
     
     console.log('🔄 Starting layout transition:', message);
@@ -50,7 +48,7 @@ export const useLoadingState = () => {
     });
     
     // Auto-hide after smooth timing
-    transitionTimeoutRef.current = setTimeout(() => {
+    transitionTimeoutRef.current = window.setTimeout(() => {
       setLoadingState(prev => ({ ...prev, isLoading: false }));
       console.log('✅ Layout transition completed');
     }, 800); // Slightly longer for smoother experience
@@ -58,7 +56,7 @@ export const useLoadingState = () => {
 
   const completeTransition = () => {
     if (transitionTimeoutRef.current) {
-      clearTimeout(transitionTimeoutRef.current);
+      window.clearTimeout(transitionTimeoutRef.current);
     }
     
     // Coordinated delay for smooth transition completion
@@ -72,7 +70,7 @@ export const useLoadingState = () => {
   useEffect(() => {
     return () => {
       if (transitionTimeoutRef.current) {
-        clearTimeout(transitionTimeoutRef.current);
+        window.clearTimeout(transitionTimeoutRef.current);
       }
     };
   }, []);

@@ -1,0 +1,565 @@
+/* =============================================================================
+   SUBSCRIPTION MODAL - Premium Design System
+   ============================================================================= */
+
+/* Overlay */
+.subscription-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(20px) saturate(150%) brightness(90%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%) brightness(90%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  touch-action: manipulation;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Modal Container */
+.subscription-modal {
+  background: rgba(40, 44, 52, 0.95);
+  backdrop-filter: blur(40px) saturate(180%) brightness(110%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(110%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  position: relative;
+  box-shadow: 
+    0 25px 50px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+    0 2px 20px rgba(255, 255, 255, 0.03) inset;
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  overflow: hidden;
+  transform-origin: center;
+}
+
+/* Content */
+.subscription-content {
+  padding: 2.5rem 2rem 2rem;
+  text-align: center;
+  color: white;
+}
+
+/* Typography */
+.subscription-title {
+  font-family: 'Conquer', system-ui, -apple-system, sans-serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  margin: 0 0 0.75rem;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.subscription-subtitle {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 2rem;
+  font-weight: 400;
+}
+
+/* Form */
+.subscription-form {
+  margin-top: 2rem;
+}
+
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 1rem;
+}
+
+.input-group:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.input-group:focus-within {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(192, 192, 192, 0.5);
+  box-shadow: 
+    0 0 0 3px rgba(192, 192, 192, 0.1),
+    0 8px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.input-group.error {
+  border-color: rgba(239, 68, 68, 0.5);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.input-group.error:focus-within {
+  box-shadow: 
+    0 0 0 3px rgba(239, 68, 68, 0.1),
+    0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Email Input */
+.email-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 1rem 1.25rem;
+  font-size: 0.95rem;
+  color: white;
+  outline: none;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.email-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+  transition: color 0.2s ease;
+}
+
+.email-input:focus::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.email-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Send Button */
+.send-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin: 4px;
+  background: linear-gradient(135deg, 
+    rgba(192, 192, 192, 0.9) 0%,
+    rgba(142, 142, 147, 0.9) 50%,
+    rgba(192, 192, 192, 0.9) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #2c2c2e;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.1);
+  
+  /* Touch optimization */
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  
+  /* Performance optimization */
+  will-change: transform, background, box-shadow;
+  backface-visibility: hidden;
+}
+
+.send-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.6) 20%,
+    rgba(255, 255, 255, 0.8) 50%,
+    rgba(255, 255, 255, 0.6) 80%,
+    transparent
+  );
+  transform: skewX(-25deg);
+  transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: left;
+}
+
+.send-button:hover::before {
+  left: 100%;
+}
+
+.send-button:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, 
+    rgba(212, 212, 216, 0.9) 0%,
+    rgba(161, 161, 170, 0.9) 25%,
+    rgba(192, 192, 192, 0.8) 50%,
+    rgba(212, 212, 216, 0.9) 75%,
+    rgba(244, 244, 245, 0.9) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 6px 20px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.send-button:active {
+  transform: translateY(0px) scale(0.95);
+  transition: all 0.1s ease-out;
+}
+
+.send-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.send-button:disabled::before {
+  opacity: 0;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(44, 44, 46, 0.3);
+  border-top: 2px solid #2c2c2e;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Close Button */
+.close-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0.06) 50%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
+  overflow: hidden;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+  
+  /* Touch optimization */
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  
+  /* Minimum touch target for accessibility */
+  min-width: 32px;
+  min-height: 32px;
+}
+
+.close-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.6) 20%,
+    rgba(255, 255, 255, 0.8) 50%,
+    rgba(255, 255, 255, 0.6) 80%,
+    transparent
+  );
+  transform: skewX(-25deg);
+  transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: left;
+}
+
+.close-button:hover::before {
+  left: 100%;
+}
+
+.close-button:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.1) 25%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(255, 255, 255, 0.15) 75%,
+    rgba(255, 255, 255, 0.25) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.95);
+  box-shadow: 
+    0 6px 20px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.close-button:active {
+  transform: translateY(0px) scale(0.95);
+  transition: all 0.1s ease-out;
+}
+
+/* Error Message */
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.875rem;
+  animation: shake 0.3s ease-in-out;
+}
+
+/* Success State */
+.success-state {
+  padding: 1rem 0;
+}
+
+.success-icon {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  color: white;
+  animation: successPulse 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 0 0 8px rgba(16, 185, 129, 0.1),
+    0 8px 25px rgba(16, 185, 129, 0.2);
+}
+
+.success-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+  color: white;
+}
+
+.success-message {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+@keyframes successPulse {
+  0% { 
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% { 
+    transform: scale(1.05);
+  }
+  100% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* =============================================================================
+   RESPONSIVE DESIGN - Mobile First
+   ============================================================================= */
+
+/* Mobile Phones (320px - 640px) */
+@media screen and (max-width: 640px) {
+  .subscription-overlay {
+    padding: 0.75rem;
+  }
+
+  .subscription-modal {
+    border-radius: 16px;
+    max-width: 100%;
+  }
+
+  .subscription-content {
+    padding: 2rem 1.5rem 1.5rem;
+  }
+
+  .subscription-title {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .subscription-subtitle {
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .email-input {
+    padding: 0.875rem 1rem;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .send-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .close-button {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    top: 0.75rem;
+    right: 0.75rem;
+  }
+}
+
+/* Small Mobile (320px - 480px) */
+@media screen and (max-width: 480px) {
+  .subscription-modal {
+    border-radius: 12px;
+  }
+
+  .subscription-content {
+    padding: 1.75rem 1.25rem 1.25rem;
+  }
+
+  .subscription-title {
+    font-size: 1.375rem;
+  }
+
+  .input-group {
+    border-radius: 10px;
+  }
+
+  .send-button {
+    border-radius: 6px;
+  }
+}
+
+/* Landscape orientation optimization */
+@media screen and (orientation: landscape) and (max-height: 600px) {
+  .subscription-modal {
+    max-height: 95vh;
+  }
+
+  .subscription-content {
+    padding: 1.5rem 2rem 1.25rem;
+  }
+
+  .subscription-title {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .subscription-subtitle {
+    margin-bottom: 1.25rem;
+  }
+}
+
+/* Tablet Portrait (640px - 768px) */
+@media screen and (min-width: 640px) and (max-width: 768px) {
+  .subscription-modal {
+    max-width: 480px;
+  }
+}
+
+/* Desktop hover enhancements */
+@media (hover: hover) and (pointer: fine) {
+  .email-input:hover {
+    background: rgba(255, 255, 255, 0.02);
+  }
+  
+  .send-button:hover {
+    transform: translateY(-2px) scale(1.02);
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .subscription-modal,
+  .subscription-overlay,
+  .success-icon,
+  .send-button,
+  .close-button,
+  .input-group {
+    animation: none;
+    transition: none;
+  }
+  
+  .send-button:hover,
+  .close-button:hover,
+  .input-group:hover {
+    transform: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .subscription-modal {
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    background: rgba(0, 0, 0, 0.95);
+  }
+  
+  .input-group {
+    border: 2px solid rgba(255, 255, 255, 0.3);
+  }
+  
+  .send-button {
+    border: 2px solid rgba(255, 255, 255, 0.3);
+  }
+} 

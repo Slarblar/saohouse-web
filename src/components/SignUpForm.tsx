@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-// Animation imports removed - not currently used
 import { X, Mail, User, Phone, Check } from 'lucide-react'
+import { useSubscription } from '../hooks/useSubscription'
 
 interface SignUpFormProps {
   onClose: () => void
@@ -13,8 +13,9 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
     phone: ''
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
+  
+  // Use our new subscription hook
+  const { isLoading: isSubmitting, isSuccess, error: subscriptionError, subscribe } = useSubscription()
 
   // Apply global modal blur effect
   React.useEffect(() => {
@@ -48,17 +49,8 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
     
     if (!validateForm()) return
     
-    setIsSubmitting(true)
-    
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      setIsSuccess(true)
-    } catch (error) {
-      console.error('Submission error:', error)
-    } finally {
-      setIsSubmitting(false)
-    }
+    // Use our new subscription functionality
+    await subscribe(formData.email)
   }
 
   const handleInputChange = (field: string, value: string) => {
@@ -88,7 +80,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
             </div>
             <h2>Welcome to SaoHouse!</h2>
             <p>
-              Thank you for joining our community. We'll keep you updated on our 
+              We'll be in touch! Thank you for joining our community. You'll receive updates on our 
               grand opening, special events, and exclusive member benefits.
             </p>
           </div>
@@ -137,6 +129,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
                 />
               </div>
               {errors.email && <div className="error-message">{errors.email}</div>}
+              {subscriptionError && !errors.email && <div className="error-message">{subscriptionError}</div>}
             </div>
 
             <div className="form-group">

@@ -1,4 +1,4 @@
-import React, { forwardRef, useMemo, useRef } from 'react';
+import React, { forwardRef, useMemo } from 'react';
 import { Effect, BlendFunction } from 'postprocessing';
 import * as THREE from 'three';
 
