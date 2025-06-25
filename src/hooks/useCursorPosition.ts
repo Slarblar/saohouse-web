@@ -17,6 +17,7 @@ export const useCursorPosition = (): CursorPosition => {
   
   const smoothPositionRef = useRef({ normalizedX: 0, normalizedY: 0 })
   const animationFrameRef = useRef<number | null>(null)
+  const lastMoveTimeRef = useRef<number>(0)
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
@@ -25,19 +26,31 @@ export const useCursorPosition = (): CursorPosition => {
       const targetNormalizedX = (x / window.innerWidth) * 2 - 1
       const targetNormalizedY = -(y / window.innerHeight) * 2 + 1
 
+      const now = performance.now()
+      const deltaTime = now - lastMoveTimeRef.current
+      lastMoveTimeRef.current = now
+
       // Cancel previous animation frame
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current)
       }
 
-             // Smooth interpolation for floating feeling
-       const smoothUpdate = () => {
-         const lerpFactor = 0.03 // Very slow smoothing for subtle cursor input
+      // Adaptive smoothing based on movement speed for ultra-smooth transitions
+      const smoothUpdate = () => {
+        // Calculate movement distance for adaptive smoothing
+        const distanceX = Math.abs(targetNormalizedX - smoothPositionRef.current.normalizedX)
+        const distanceY = Math.abs(targetNormalizedY - smoothPositionRef.current.normalizedY)
+        const totalDistance = Math.sqrt(distanceX * distanceX + distanceY * distanceY)
+        
+        // Adaptive lerp factor: faster for larger movements, smoother for fine adjustments
+        const baseLerpFactor = 0.06
+        const speedMultiplier = Math.min(totalDistance * 8 + 1, 3) // Responsive to movement speed
+        const adaptiveLerpFactor = baseLerpFactor * speedMultiplier
         
         smoothPositionRef.current.normalizedX += 
-          (targetNormalizedX - smoothPositionRef.current.normalizedX) * lerpFactor
+          (targetNormalizedX - smoothPositionRef.current.normalizedX) * adaptiveLerpFactor
         smoothPositionRef.current.normalizedY += 
-          (targetNormalizedY - smoothPositionRef.current.normalizedY) * lerpFactor
+          (targetNormalizedY - smoothPositionRef.current.normalizedY) * adaptiveLerpFactor
 
         setPosition({
           x,
@@ -46,11 +59,10 @@ export const useCursorPosition = (): CursorPosition => {
           normalizedY: smoothPositionRef.current.normalizedY,
         })
 
-        // Continue smoothing if we haven't reached the target
-        const distanceX = Math.abs(targetNormalizedX - smoothPositionRef.current.normalizedX)
-        const distanceY = Math.abs(targetNormalizedY - smoothPositionRef.current.normalizedY)
+        // Continue smoothing with adaptive threshold
+        const adaptiveThreshold = Math.max(0.0002, totalDistance * 0.1) // Dynamic threshold
         
-        if (distanceX > 0.001 || distanceY > 0.001) {
+        if (distanceX > adaptiveThreshold || distanceY > adaptiveThreshold) {
           animationFrameRef.current = requestAnimationFrame(smoothUpdate)
         }
       }

@@ -17,6 +17,9 @@ import ChromeObject from './ChromeObject';
 import { ToneMappingMode } from 'postprocessing';
 import ToneMappingControls from './ToneMappingControls';
 import SettingsManager from './SettingsManager';
+import LoadingOverlay from './LoadingOverlay';
+import BlurInEffect from './BlurInEffect';
+import { useLoadingState } from '../hooks/useLoadingState';
 import type { PostProcessingSettings } from './ToneMappingControls';
 import './Hero3D.css';
 
@@ -513,8 +516,44 @@ const Hero3DLens: React.FC = () => {
   // Load settings with priority: public folder > localStorage > defaults
   const [settings, setSettings] = useState<PostProcessingSettings>(defaultSettings);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
-
+  const [isModelLoaded, setIsModelLoaded] = useState(false);
   const [showControls, setShowControls] = useState(false);
+  
+  // Use our new loading state hook
+  const { 
+    isLoading: isShowingLoadingOverlay, 
+    loadingType, 
+    message: loadingMessage,
+    completeInitialLoading,
+    startTransition,
+    completeTransition 
+  } = useLoadingState();
+
+  // Blur-in animation state
+  const [blurInState, setBlurInState] = useState({ blurAmount: 0, isAnimating: false });
+
+  // Show unified loading experience - only wait for settings, let model load in background
+  const showLoadingOverlay = isLoadingSettings || isShowingLoadingOverlay;
+  
+  // Debug loading state
+  useEffect(() => {
+    console.log('📊 Loading overlay state:', { 
+      showLoadingOverlay, 
+      isLoadingSettings, 
+      isShowingLoadingOverlay, 
+      isModelLoaded 
+    });
+  }, [showLoadingOverlay, isLoadingSettings, isShowingLoadingOverlay, isModelLoaded]);
+  
+  // Track when everything is fully loaded (loading overlay gone + blur-in complete)
+  const isFullyLoaded = !showLoadingOverlay && !blurInState.isAnimating;
+  
+  // Log when cursor following becomes active
+  useEffect(() => {
+    if (isFullyLoaded) {
+      console.log('🖱️ Cursor following activated - page fully loaded!');
+    }
+  }, [isFullyLoaded]);
 
   // Load settings from public folder on component mount
   useEffect(() => {
@@ -527,11 +566,18 @@ const Hero3DLens: React.FC = () => {
         console.error('Failed to load settings:', error);
       } finally {
         setIsLoadingSettings(false);
+        // Complete the initial loading with coordinated timing for Canvas animation
+        // This ensures Canvas fade-in (2.1s total) can start and loading overlay dismisses smoothly
+        setTimeout(() => {
+          completeInitialLoading();
+        }, 2000); // 2.0 seconds - coordinated with Canvas animation timing
       }
     };
 
     loadSettings();
-  }, []); // Only run on mount
+  }, [completeInitialLoading]); // Only run on mount
+
+
 
   // Save settings to localStorage whenever they change (but not on initial load)
   useEffect(() => {
@@ -565,36 +611,15 @@ const Hero3DLens: React.FC = () => {
     console.log('🎨 Tone mapping settings changed:', settings.toneMapping);
   }, [settings.toneMapping]);
 
-  // Show loading screen while settings are being loaded
-  if (isLoadingSettings) {
-    return (
-      <div className="hero-3d-container" style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-        background: '#000000',
-        color: '#ffffff',
-        fontFamily: 'Inter, sans-serif'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '3px solid #333333',
-            borderTop: '3px solid #ffffff',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 20px'
-          }} />
-          <p>Loading SAO House settings...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="hero-3d-container">
+      {/* Unified Loading Overlay */}
+      <LoadingOverlay 
+        isVisible={showLoadingOverlay}
+        message={isLoadingSettings ? 'Loading SAO House...' : loadingMessage}
+        type={loadingType}
+      />
+
       {/* Development Controls - Only shown when SHOW_CONTROLS is true */}
       {SHOW_CONTROLS && (
         <>
@@ -634,13 +659,14 @@ const Hero3DLens: React.FC = () => {
         </>
       )}
 
-      <Canvas
-        camera={{ position: [0, 0, 5], fov: 50 }}
-        style={{ 
+      {/* Canvas always renders, loading overlay handles the transition */}
+      {(
+        <Canvas
+          camera={{ position: [0, 0, 5], fov: 50 }}
+                  style={{ 
           width: '100vw', 
           height: '100vh',
-          opacity: 0,
-          animation: 'heroFadeIn 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards'
+          opacity: 1
         }}
         gl={{ 
           antialias: true,
@@ -680,7 +706,27 @@ const Hero3DLens: React.FC = () => {
         
         <Suspense fallback={null}>
           <ToneMappingExposure exposure={settings.toneMapping.exposure} />
-          <ChromeObject materialSettings={settings.material} />
+          <ChromeObject 
+            materialSettings={settings.material} 
+            followCursor={true}
+            followIntensity={0.3}
+            enableCursorFollowing={isFullyLoaded}
+            startPresentation={!showLoadingOverlay} // Start presentation after loading overlay disappears
+            onResponsiveChange={(isTransitioning) => {
+              if (isTransitioning) {
+                startTransition('Adjusting for screen size...');
+              } else {
+                completeTransition();
+              }
+            }}
+            onBlurInUpdate={(blurAmount, isAnimating) => {
+              setBlurInState({ blurAmount, isAnimating });
+            }}
+            onModelLoaded={(isLoaded) => {
+              console.log('🎯 3D Model loading state changed:', isLoaded);
+              setIsModelLoaded(isLoaded);
+            }}
+          />
           <AnimatedOrbitControls />
           
           {/* Post-processing effects with lens distortion */}
@@ -735,9 +781,16 @@ const Hero3DLens: React.FC = () => {
               denoiseSamples={8}
               denoiseRadius={12}
             />
+            
+            {/* Dynamic blur-in effect for 3D model entrance - connected to actual animation */}
+            <BlurInEffect 
+              blurAmount={blurInState.blurAmount} 
+              opacity={1.0}
+            />
           </EffectComposer>
         </Suspense>
       </Canvas>
+      )}
     </div>
   );
 };
