@@ -633,7 +633,7 @@ const PostProcessingEffects: React.FC<PostProcessingEffectsProps> = ({
     if (godRays?.enabled) {
       // God Rays effect disabled to prevent unwanted sphere rendering
       // The sphere mesh was creating a visible white sphere in the scene
-      console.log('God Rays effect requested but disabled to prevent sphere artifacts');
+      
       godRaysEffect = undefined;
     }
 

@@ -157,7 +157,7 @@ const ResponsiveCameraController = ({ deviceInfo }: { deviceInfo: any }) => {
         const target = getTargetPosition();
         controlsRef.current.target.copy(target);
         controlsRef.current.update();
-        console.log('🎯 Camera target set to:', target);
+  
       }
     }
   }, [deviceInfo, camera]);
@@ -170,7 +170,7 @@ const ResponsiveCameraController = ({ deviceInfo }: { deviceInfo: any }) => {
           const target = getTargetPosition();
           controlsRef.current.target.copy(target);
           controlsRef.current.update();
-          console.log('🔄 Orientation changed - camera target updated to:', target);
+  
         }
       }, 100); // Small delay to ensure orientation change is complete
     };
@@ -266,9 +266,7 @@ const Hero3D: React.FC = () => {
   } = settingsData.settings;
 
   useEffect(() => {
-    console.log('🎬 Hero3D component mounted');
-    console.log('📱 Device info:', deviceInfo);
-    return () => console.log('🎬 Hero3D component unmounted');
+
   }, [deviceInfo]);
 
   const handleCreated = () => {

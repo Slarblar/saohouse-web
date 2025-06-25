@@ -204,7 +204,7 @@ const LensDistortionEffect: React.FC<LensDistortionEffectProps> = ({
   useEffect(() => {
     if (!lensPassRef.current) return;
     // Temporarily disabled for debugging
-    console.log('Lens distortion settings updated:', lensDistortion);
+
   }, [lensDistortion]);
 
   // Update other effects when settings change
@@ -244,7 +244,7 @@ const LensDistortionEffect: React.FC<LensDistortionEffectProps> = ({
   useEffect(() => {
     if (!lensPassRef.current) return;
     // Temporarily disabled for debugging
-    console.log('Size updated:', size.width, size.height);
+
   }, [size.width, size.height]);
 
   // Render using the composer

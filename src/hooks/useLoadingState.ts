@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface LoadingState {
   isLoading: boolean;
@@ -13,34 +13,40 @@ export const useLoadingState = () => {
     message: 'Loading experience...'
   });
 
-
-  
   const transitionTimeoutRef = useRef<number | undefined>(undefined);
   const initialLoadingRef = useRef(true);
 
-  // Handle initial loading completion with coordinated timing
-  const completeInitialLoading = () => {
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (transitionTimeoutRef.current) {
+        window.clearTimeout(transitionTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const completeInitialLoading = useCallback((message = 'Loading complete') => {
     if (!initialLoadingRef.current) return;
     
-    console.log('🎬 Initiating smooth loading completion sequence');
-    
-    // Coordinated transition for ultra-smooth UX
-    // This timing coordinates with Canvas fade-in and blur-in animation
-    setLoadingState(prev => ({ ...prev, isLoading: false }));
     initialLoadingRef.current = false;
-    console.log('✨ Loading overlay dismissed - Canvas and 3D model ready');
-  };
+    setLoadingState(prev => ({ ...prev, isLoading: false }));
+    
+    // Smooth completion with slight delay for natural feel
+    const completionTimeout = window.setTimeout(() => {
+      setLoadingState(prev => ({ ...prev, isLoading: false }));
+    }, 800);
+    
+    return () => window.clearTimeout(completionTimeout);
+  }, []);
 
-  // Handle responsive transitions with improved timing
-  const startTransition = (message: string = 'Adjusting layout...') => {
-    if (initialLoadingRef.current) return; // Don't show transition during initial load
+  const startTransition = useCallback((message: string) => {
+    if (initialLoadingRef.current) return;
     
     // Clear any existing transition timeout
     if (transitionTimeoutRef.current) {
       window.clearTimeout(transitionTimeoutRef.current);
     }
     
-    console.log('🔄 Starting layout transition:', message);
     setLoadingState({
       isLoading: true,
       loadingType: 'transition',
@@ -50,11 +56,10 @@ export const useLoadingState = () => {
     // Auto-hide after smooth timing
     transitionTimeoutRef.current = window.setTimeout(() => {
       setLoadingState(prev => ({ ...prev, isLoading: false }));
-      console.log('✅ Layout transition completed');
     }, 800); // Slightly longer for smoother experience
-  };
+  }, []);
 
-  const completeTransition = () => {
+  const completeTransition = useCallback(() => {
     if (transitionTimeoutRef.current) {
       window.clearTimeout(transitionTimeoutRef.current);
     }
@@ -62,23 +67,25 @@ export const useLoadingState = () => {
     // Coordinated delay for smooth transition completion
     setTimeout(() => {
       setLoadingState(prev => ({ ...prev, isLoading: false }));
-      console.log('✅ Transition manually completed');
     }, 300); // Smooth completion timing
-  };
+  }, []);
 
-  // Cleanup timeouts on unmount
-  useEffect(() => {
-    return () => {
-      if (transitionTimeoutRef.current) {
-        window.clearTimeout(transitionTimeoutRef.current);
-      }
-    };
+  const manualComplete = useCallback(() => {
+    if (transitionTimeoutRef.current) {
+      window.clearTimeout(transitionTimeoutRef.current);
+    }
+    
+    // Coordinated delay for smooth transition completion
+    setTimeout(() => {
+      setLoadingState(prev => ({ ...prev, isLoading: false }));
+    }, 300); // Smooth completion timing
   }, []);
 
   return {
     ...loadingState,
     completeInitialLoading,
     startTransition,
-    completeTransition
+    completeTransition,
+    manualComplete
   };
 }; 

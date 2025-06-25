@@ -117,7 +117,6 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
     // Ensure parent group starts with zero rotation (default state)
     if (parentGroupRef.current) {
       parentGroupRef.current.rotation.set(0, 0, 0);
-      console.log('🎯 3D logo initialized with zero rotation (default state)');
     }
   }, []);
 
@@ -155,7 +154,7 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
   // Track when model is loaded reliably
   useEffect(() => {
     if (gltf.scene && !isModelLoaded) {
-      console.log('🔍 3D Model loaded successfully, ready for presentation');
+      
       
       // Mark as loaded immediately for reliable timing
       setIsModelLoaded(true);
@@ -170,7 +169,7 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
   // Single effect to handle presentation start - eliminates race conditions
   useEffect(() => {
     if (startPresentation && isModelLoaded && !presentationStarted) {
-      console.log('🎭 Starting smooth 3D fade-in presentation (SINGLE TRIGGER)');
+      
       setPresentationStarted(true);
       blurAnimation.start();
     }
@@ -182,7 +181,7 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
   
   useEffect(() => {
     if (gltf.scene && !materialsInitialized.current) {
-      console.log('📦 Logo model setup - ONE TIME ONLY');
+      
       
       // Center the model geometry at origin to fix any internal offset
       const box = new THREE.Box3().setFromObject(gltf.scene);
@@ -190,7 +189,7 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
       
       // Apply the offset to center the model properly at origin
       gltf.scene.position.set(-center.x, -center.y, -center.z);
-      console.log(`🎯 Model centered at origin: offset=[${-center.x}, ${-center.y}, ${-center.z}]`);
+      
       
       // Create material once and apply to all meshes
       materialRef.current = new THREE.MeshPhysicalMaterial({
@@ -215,7 +214,7 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
       });
       
       materialsInitialized.current = true;
-      console.log('✅ Materials initialized - no more recreations');
+      
     }
     
     // Cleanup function
@@ -379,7 +378,7 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
         targetRotationRef.current.set(0, 0, 0);
         cursorInfluenceRef.current = 0; // Force cursor influence to zero immediately
         
-        console.log('🎭 RESET OVERRIDE - Starting clean reset animation - all rotations to zero, cursor following disabled');
+        
        }
       
              // During reset, override everything to force exact zero rotation
@@ -405,14 +404,14 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
            
            isResettingRef.current = false;
            resetCompleteTimeRef.current = now;
-           console.log(`✅ Perfect reset complete - starting ${COOLDOWN_DURATION}ms cooldown period`);
+           
          }
        }
       
       // Clear cooldown period when cursor moves again
       if (!shouldReset && !isInResetCooldown && resetCompleteTimeRef.current > 0) {
         resetCompleteTimeRef.current = 0;
-        console.log('🖱️ Cursor reactivated - cooldown cleared');
+        
       }
       
              // Enhanced smooth interpolation with adaptive responsiveness (skip during reset)
@@ -480,7 +479,7 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
       baseAnimationStateRef.current.set(0, 0, 0);
       cursorInfluenceRef.current = 0;
       
-      console.log('🧹 ChromeObject cleanup completed');
+      
     };
   }, []);
 

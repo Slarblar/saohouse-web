@@ -19,9 +19,6 @@ const API_ENDPOINT = '/api/subscribe';
  */
 export async function subscribeToNewsletter(email: string): Promise<SubscriptionResponse> {
   try {
-    console.log('Attempting to subscribe:', email);
-    console.log('API endpoint:', API_ENDPOINT);
-    
     const response = await fetch(API_ENDPOINT, {
       method: 'POST',
       headers: {
@@ -30,13 +27,9 @@ export async function subscribeToNewsletter(email: string): Promise<Subscription
       body: JSON.stringify({ email } satisfies SubscriptionRequest),
     });
 
-    console.log('Response status:', response.status);
-    console.log('Response ok:', response.ok);
-
     // Check if response is JSON
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
-      console.error('Non-JSON response received:', contentType);
       return {
         success: false,
         error: `Server returned invalid response format. Status: ${response.status}`,
@@ -44,7 +37,6 @@ export async function subscribeToNewsletter(email: string): Promise<Subscription
     }
 
     const data: SubscriptionResponse = await response.json();
-    console.log('Response data:', data);
     
     // Return the response data regardless of HTTP status
     // The serverless function handles proper error formatting

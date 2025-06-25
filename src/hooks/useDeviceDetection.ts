@@ -39,46 +39,27 @@ const getDeviceInfo = (): DeviceInfo => {
   
   if (isIPhone) {
     type = 'mobile';
-    console.log('📱 Detected as iPhone (MOBILE)');
   } else if (isIPad) {
     type = 'tablet';
-    console.log('📱 Detected as iPad (TABLET)');
   } else if (isAndroid) {
     // Android tablets typically have width > 600dp and are in landscape, or height > 960dp in portrait
     const androidTabletThreshold = orientation === 'landscape' ? 900 : 600;
     if (width >= androidTabletThreshold || height >= androidTabletThreshold) {
       type = 'tablet';
-      console.log('📱 Detected as Android Tablet (TABLET)');
     } else {
       type = 'mobile';
-      console.log('📱 Detected as Android Phone (MOBILE)');
     }
   } else if (isTouchDevice) {
     // Generic touch device detection
     if (Math.min(width, height) >= 768) {
       type = 'tablet';
-      console.log('📱 Detected as Touch Tablet (TABLET)');
     } else {
       type = 'mobile';
-      console.log('📱 Detected as Touch Mobile (MOBILE)');
     }
   } else {
     // Desktop/laptop detection
     type = 'desktop';
-    console.log('🖥️ Detected as Desktop/Laptop (DESKTOP)');
   }
-  
-  console.log(`🔍 Device Details:`, {
-    type,
-    orientation,
-    width,
-    height,
-    pixelRatio,
-    isIPhone,
-    isIPad,
-    isAndroid,
-    isTouchDevice
-  });
   
   return {
     type,

@@ -255,7 +255,7 @@ const AnimatedEnvironment: React.FC<{
   // Log rotation changes for debugging (less frequent)
   useEffect(() => {
     if (enabled) {
-      console.log('🔄 HDRI Animation active, rotation:', currentRotation.toFixed(2));
+      
     }
   }, [enabled, Math.floor(currentRotation * 2) / 2]); // Log every 0.5 radian change
 
@@ -324,7 +324,7 @@ const AnimatedOrbitControls: React.FC = () => {
           startDistance: currentDistance,
         });
         
-        console.log('🎯 Starting stabilized camera return animation');
+  
       }
     }
     
@@ -376,7 +376,7 @@ const AnimatedOrbitControls: React.FC = () => {
         controlsRef.current.target.copy(defaultCameraState.target);
         controlsRef.current.update();
         setReturnAnimation(prev => ({ ...prev, isActive: false }));
-        console.log('✨ Stabilized camera return animation complete');
+
       }
     }
   });
@@ -444,7 +444,7 @@ const ToneMappingExposure: React.FC<{ exposure: number }> = ({ exposure }) => {
   
   useEffect(() => {
     gl.toneMappingExposure = exposure;
-    console.log('🎨 Renderer tone mapping exposure set to:', exposure);
+
   }, [gl, exposure]);
   
   return null;
@@ -459,7 +459,7 @@ const loadSettingsFromPublic = async (): Promise<PostProcessingSettings> => {
       throw new Error(`Failed to fetch settings: ${response.status}`);
     }
     const data = await response.json();
-    console.log('📥 Loaded settings from public folder:', data);
+    
     
     // Extract settings from the JSON structure and merge with defaults
     const importedSettings = data.settings || data;
@@ -551,7 +551,7 @@ const Hero3DLens: React.FC = () => {
   // Log when cursor following becomes active
   useEffect(() => {
     if (isFullyLoaded) {
-      console.log('🖱️ Cursor following activated - page fully loaded!');
+  
     }
   }, [isFullyLoaded]);
 
@@ -561,7 +561,7 @@ const Hero3DLens: React.FC = () => {
       try {
         const loadedSettings = await loadSettingsFromPublic();
         setSettings(loadedSettings);
-        console.log('🎬 Settings loaded successfully from public folder');
+
       } catch (error) {
         console.error('Failed to load settings:', error);
       } finally {
@@ -591,23 +591,21 @@ const Hero3DLens: React.FC = () => {
 
   const handleSettingsChange = (newSettings: PostProcessingSettings) => {
     setSettings(newSettings);
-    console.log('📝 Settings updated:', newSettings);
+
   };
 
   const handleSettingsLoad = (newSettings: PostProcessingSettings) => {
     setSettings(newSettings);
-    console.log('📥 Settings loaded:', newSettings);
+
   };
 
   useEffect(() => {
-    console.log('🎬 Hero3DLens component mounted');
-    console.log('✨ HDRI Animation enabled for luxury look');
-    return () => console.log('🎬 Hero3DLens component unmounted');
+
   }, []);
 
   // Debug tone mapping changes
   useEffect(() => {
-    console.log('🎨 Tone mapping settings changed:', settings.toneMapping);
+
   }, [settings.toneMapping]);
 
   return (
@@ -673,7 +671,7 @@ const Hero3DLens: React.FC = () => {
           depth: true,
           powerPreference: "high-performance"
         }}
-        onCreated={() => console.log('✨ Canvas created in Hero3DLens with animated HDRI')}
+        onCreated={() => {}}
       >
         <color attach="background" args={['#000000']} />
         
@@ -721,7 +719,7 @@ const Hero3DLens: React.FC = () => {
               setBlurInState({ blurAmount, isAnimating });
             }}
             onModelLoaded={(isLoaded) => {
-              console.log('🎯 3D Model loading state changed:', isLoaded);
+          
               setIsModelLoaded(isLoaded);
             }}
           />

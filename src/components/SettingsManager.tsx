@@ -77,7 +77,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({ currentSettings, onSe
       
       localStorage.setItem(backupKey, JSON.stringify(backupData));
       setHasBackup(true); // Update backup status
-      console.log('Backup saved:', backupData); // Debug log
+
       alert(`Settings backed up successfully!\nTimestamp: ${new Date().toLocaleString()}`);
     } catch (error) {
       console.error('Backup save error:', error);
@@ -96,7 +96,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({ currentSettings, onSe
       }
       
       const data = JSON.parse(backupData);
-      console.log('Loading backup:', data); // Debug log
+
       
       if (!data.settings) {
         alert('Error: Backup data is corrupted or invalid');

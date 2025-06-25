@@ -49,56 +49,45 @@ export const useResponsive3D = (
   const settings = { ...defaultSettings, ...customSettings };
 
   useEffect(() => {
-    // Check if this is a mobile device orientation change after initialization
-    if (isInitialized && enableMobileReload && deviceInfo.isIPhone && 
-        (previousDeviceInfo.orientation !== deviceInfo.orientation)) {
-      console.log(`📱 iPhone orientation change detected: ${previousDeviceInfo.orientation} → ${deviceInfo.orientation}. Reloading...`);
-      window.location.reload();
-      return;
+    // iPhone orientation change reload logic
+    if (previousDeviceInfo.type === 'mobile' && 
+        deviceInfo.type === 'mobile' &&
+        previousDeviceInfo.orientation !== deviceInfo.orientation &&
+        isInitialized && enableMobileReload) {
+        
+        // Give a moment for orientation to settle, then reload
+        setTimeout(() => {
+            window.location.reload();
+        }, 100);
+        return;
     }
-    
-    // Trigger loading state for responsive transitions (but not during initial load)
-    if (isInitialized && onResponsiveChange && 
-        (previousDeviceInfo.type !== deviceInfo.type || 
-         previousDeviceInfo.orientation !== deviceInfo.orientation)) {
-      console.log(`🔄 Responsive transition detected: ${previousDeviceInfo.type} ${previousDeviceInfo.orientation} → ${deviceInfo.type} ${deviceInfo.orientation}`);
-      onResponsiveChange(true);
+
+    // Major layout change detection
+    if (previousDeviceInfo.type !== deviceInfo.type || 
+        previousDeviceInfo.orientation !== deviceInfo.orientation) {
+        onResponsiveChange && onResponsiveChange(true);
     }
-    
-    // Log current device detection
-    console.log(`📊 Device Detection Results:`, {
-      type: deviceInfo.type,
-      orientation: deviceInfo.orientation,
-      isIPhone: deviceInfo.isIPhone,
-      isIPad: deviceInfo.isIPad,
-      isAndroid: deviceInfo.isAndroid,
-      screenSize: `${deviceInfo.screenWidth}x${deviceInfo.screenHeight}`
-    });
-    
+
+    // Update responsive 3D configuration
+    const baseConfig = settings[deviceInfo.type][deviceInfo.orientation];
+    let newConfig = { ...baseConfig };
+
+    // iPad specific adjustments
+    if (deviceInfo.isIPad && deviceInfo.type === 'tablet') {
+        newConfig = {
+            ...newConfig,
+            scale: 0.24,
+            position: [3, 0.25, 0] as [number, number, number]
+        };
+    }
+
+    // Mobile landscape adjustments
     if (deviceInfo.type === 'mobile' && deviceInfo.orientation === 'landscape') {
-      console.log(`🚨 MOBILE LANDSCAPE DETECTED - Scale should be 0.094`);
+        newConfig.scale = 0.094;
     }
-    
-    if (deviceInfo.isIPad) {
-      console.log(`🚨 IPAD DETECTED - Using tablet settings`);
-    }
-    
-    const newConfig = settings[deviceInfo.type][deviceInfo.orientation];
+
     setConfig(newConfig);
     setPreviousDeviceInfo(deviceInfo);
-    
-    console.log(`📱 Final Config: ${deviceInfo.type} ${deviceInfo.orientation} - scale: ${newConfig.scale}, position:`, newConfig.position);
-    
-    // TEMPORARY DEBUG: Specifically log iPad detection and config
-    if (deviceInfo.isIPad) {
-      console.log('🚨 IPAD DETECTED - Applied Config:', {
-        type: deviceInfo.type,
-        orientation: deviceInfo.orientation,
-        scale: newConfig.scale,
-        position: newConfig.position,
-        expectedPosition: deviceInfo.orientation === 'portrait' ? '[0.40, 0, 0]' : '[0, 0, 0]'
-      });
-    }
     
     // Mark as initialized after first config update
     if (!isInitialized) {
