@@ -638,18 +638,19 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
     return null;
   }
 
-  console.log('🎯 ChromeObject rendering:', { 
-    shouldRender, 
-    hasScene: !!gltf.scene, 
-    scale, 
-    visualOffset,
-    isModelLoaded,
-    isMaterialsReady,
-    parentGroupPosition: parentGroupRef.current?.position,
-    childGroupPosition: childGroupRef.current?.position,
-    childGroupScale: childGroupRef.current?.scale,
-    gltfScenePosition: gltf.scene?.position
-  });
+  // TEMP: Rendering log disabled to reduce console noise
+  // console.log('🎯 ChromeObject rendering:', { 
+  //   shouldRender, 
+  //   hasScene: !!gltf.scene, 
+  //   scale, 
+  //   visualOffset,
+  //   isModelLoaded,
+  //   isMaterialsReady,
+  //   parentGroupPosition: parentGroupRef.current?.position,
+  //   childGroupPosition: childGroupRef.current?.position,
+  //   childGroupScale: childGroupRef.current?.scale,
+  //   gltfScenePosition: gltf.scene?.position
+  // });
 
   return (
     <group ref={parentGroupRef} position={[0, 0, 0]}>

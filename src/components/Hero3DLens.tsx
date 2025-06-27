@@ -227,6 +227,15 @@ const CustomLensDistortion: React.FC<{ settings: PostProcessingSettings['lensDis
       effect.chromaticAberration = settings.chromaticAberration;
       effect.vignette = settings.vignette;
       effect.center.set(settings.center[0], settings.center[1]);
+      
+      // Debug: Log the actual values being applied to the shader
+      console.log('🔧 CustomLensDistortion values applied:', {
+        enabled: settings.enabled,
+        barrelDistortion: settings.barrelDistortion,
+        chromaticAberration: settings.chromaticAberration,
+        vignette: settings.vignette,
+        center: settings.center
+      });
     }
   }, [effect, settings]);
 
@@ -526,6 +535,10 @@ const discoverAndLoadSettings = async (): Promise<PostProcessingSettings> => {
             
             // Extract settings from the JSON structure and merge with defaults
             const importedSettings = data.settings || data;
+            
+            // DEBUG: Log the raw imported settings to see what we're actually loading
+            console.log('🔍 Raw imported lensDistortion settings:', importedSettings.lensDistortion);
+            console.log('🔍 Default lensDistortion settings:', defaultSettings.lensDistortion);
             return {
               ...defaultSettings,
               ...importedSettings,
@@ -593,6 +606,8 @@ interface Hero3DLensProps {
 }
 
 const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
+  console.log('🚀🚀🚀 HERO3D LENS COMPONENT MOUNTING 🚀🚀🚀');
+  
   // Load settings with priority: public folder > localStorage > defaults
   const [settings, setSettings] = useState<PostProcessingSettings>(defaultSettings);
   const [showControls, setShowControls] = useState(false);
@@ -610,9 +625,11 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
 
   // Load settings with auto-discovery
   useEffect(() => {
+    console.log('🔥🔥🔥 SETTINGS LOADING USEEFFECT TRIGGERED 🔥🔥🔥');
+    
     const loadSettings = async () => {
       try {
-        console.log('🔍 Hero3DLens: Starting settings discovery...');
+        console.log('🔍🔍🔍 STARTING SETTINGS DISCOVERY 🔍🔍🔍');
         const loadedSettings = await discoverAndLoadSettings();
         console.log('✅ Hero3DLens: Settings loaded successfully:', {
           toneMapping: loadedSettings.toneMapping,
@@ -621,8 +638,17 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
           lensDistortion: loadedSettings.lensDistortion,
           filmGrain: loadedSettings.filmGrain
         });
+        console.log('🔥 ABOUT TO SET LOADED SETTINGS:', {
+          lensDistortion: loadedSettings.lensDistortion,
+          exposure: loadedSettings.toneMapping.exposure
+        });
         setSettings(loadedSettings);
         setIsSettingsLoaded(true);
+        
+        // FORCE a re-log after state update
+        setTimeout(() => {
+          console.log('🔥 SETTINGS AFTER STATE UPDATE - LENS DISTORTION:', loadedSettings.lensDistortion);
+        }, 100);
       } catch (error) {
         console.error('❌ Failed to load settings:', error);
         setIsSettingsLoaded(true);
@@ -636,6 +662,7 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
   useEffect(() => {
     if (isSettingsLoaded) {
       try {
+        console.log('💾 SAVING TO LOCALSTORAGE - LENS DISTORTION:', settings.lensDistortion);
         localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
       } catch (error) {
         console.warn('Failed to save settings to localStorage:', error);
@@ -688,15 +715,26 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
     setSettings(newSettings);
   };
 
-  // Debug: Log settings when they change
+  // Debug: Log settings when they change - PROMINENT LOGGING
   useEffect(() => {
-    console.log('🎨 Post-processing settings updated:', {
-      exposure: settings.toneMapping.exposure,
-      bloomIntensity: settings.bloom.intensity,
-      chromaticAberration: settings.chromaticAberration.offset,
-      lensDistortionCA: settings.lensDistortion.chromaticAberration,
-      filmGrainOpacity: settings.filmGrain.opacity
+    console.log('🎨🎨🎨 POST-PROCESSING SETTINGS UPDATED 🎨🎨🎨');
+    console.log('📊 Exposure:', settings.toneMapping.exposure);
+    console.log('✨ Bloom Intensity:', settings.bloom.intensity);
+    console.log('🌈 Chromatic Aberration:', {
+      enabled: settings.chromaticAberration.enabled,
+      offset: settings.chromaticAberration.offset,
+      scaledOffset: settings.chromaticAberration.enabled 
+        ? [settings.chromaticAberration.offset[0] * 0.001, settings.chromaticAberration.offset[1] * 0.001]
+        : [0, 0]
     });
+    console.log('🔍 Lens Distortion:', {
+      enabled: settings.lensDistortion.enabled,
+      chromaticAberration: settings.lensDistortion.chromaticAberration,
+      vignette: settings.lensDistortion.vignette
+    });
+    console.log('📺 Film Grain Opacity:', settings.filmGrain.opacity);
+    console.log('🌫️ SSAO Intensity:', settings.ssao.intensity);
+    console.log('🎨🎨🎨 END POST-PROCESSING SETTINGS 🎨🎨🎨');
   }, [settings]);
 
   return (
@@ -773,7 +811,7 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
           gl.shadowMap.type = THREE.PCFShadowMap; // Balanced quality/performance (was PCFSoftShadowMap)
           gl.outputColorSpace = THREE.SRGBColorSpace;
           gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = 1.0;
+          // Exposure is handled by the ToneMappingExposure component below
           
           // PERFORMANCE: Optimized pixel ratio for smooth FPS
           gl.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -843,10 +881,23 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
             />
             
             <ChromaticAberration 
-              offset={[settings.chromaticAberration.offset[0] * 0.002, settings.chromaticAberration.offset[1] * 0.002]}
+              offset={settings.chromaticAberration.enabled 
+                ? [settings.chromaticAberration.offset[0] * 0.001, settings.chromaticAberration.offset[1] * 0.001]
+                : [0, 0]
+              }
             />
             
-            <CustomLensDistortion settings={settings.lensDistortion} />
+            {/* Custom Lens Distortion - Main source of chromatic aberration effect */}
+            <CustomLensDistortion 
+              key={`lens-${settings.lensDistortion.enabled}-${settings.lensDistortion.chromaticAberration}-${settings.lensDistortion.vignette}`}
+              settings={settings.lensDistortion.enabled ? settings.lensDistortion : {
+                enabled: false,
+                barrelDistortion: 0.0,
+                chromaticAberration: 0.0,
+                vignette: 0.0,
+                center: [0.5, 0.5]
+              }} 
+            />
             
             <Vignette
               offset={settings.lensDistortion.vignette}
