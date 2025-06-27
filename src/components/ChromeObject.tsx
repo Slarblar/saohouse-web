@@ -190,11 +190,20 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
       console.log('✅ 3D Model loaded successfully!');
       setIsModelLoaded(true);
       
+      // PRODUCTION IMMEDIATE FIX: Set full opacity immediately in production
+      if (process.env.NODE_ENV === 'production' && materialRef.current) {
+        console.log('🚀 Production mode - setting immediate full opacity');
+        materialRef.current.opacity = 1.0;
+        materialRef.current.roughness = activeMaterialSettings.roughness;
+        materialRef.current.clearcoat = activeMaterialSettings.clearcoat;
+        materialRef.current.needsUpdate = true;
+      }
+      
       if (onModelLoaded) {
         onModelLoaded(true);
       }
     }
-  }, [gltf.scene, isModelLoaded, onModelLoaded]);
+  }, [gltf.scene, isModelLoaded, onModelLoaded, activeMaterialSettings]);
 
   // Handle presentation start - simplified, no competing states
   useEffect(() => {
@@ -217,6 +226,22 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
       materialRef.current.needsUpdate = true;
     }
   }, [blurAnimation.isAnimating, activeMaterialSettings]);
+
+  // PRODUCTION FAILSAFE: Ensure full opacity after materials are ready
+  useEffect(() => {
+    if (isMaterialsReady && materialRef.current && process.env.NODE_ENV === 'production') {
+      console.log('🎯 Production failsafe - ensuring full opacity after materials ready');
+      setTimeout(() => {
+        if (materialRef.current) {
+          materialRef.current.opacity = 1.0;
+          materialRef.current.roughness = activeMaterialSettings.roughness;
+          materialRef.current.clearcoat = activeMaterialSettings.clearcoat;
+          materialRef.current.needsUpdate = true;
+          console.log('🎯 Production opacity set to:', materialRef.current.opacity);
+        }
+      }, 100); // Small delay to ensure everything is ready
+    }
+  }, [isMaterialsReady, activeMaterialSettings]);
 
   // UNIFIED VISIBILITY: Single source of truth - no competing states
   const shouldRender = isModelLoaded && !loadError; // Don't render if there's an error
@@ -350,17 +375,6 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
   const frameTimeRef = useRef<number>(0);
   const fpsCounterRef = useRef<number>(0);
   
-  // This effect ensures the material properties are correct after our main animation.
-  useEffect(() => {
-    // We run this when the blurAnimation hook is no longer animating.
-    if (!blurAnimation.isAnimating && materialRef.current) {
-      materialRef.current.opacity = 1.0;
-      materialRef.current.roughness = activeMaterialSettings.roughness;
-      materialRef.current.clearcoat = activeMaterialSettings.clearcoat;
-      materialRef.current.needsUpdate = true;
-    }
-  }, [blurAnimation.isAnimating, activeMaterialSettings]);
-
   // Single unified useFrame optimized for 60fps
   useFrame((state, delta) => {
     if (!parentGroupRef.current || !childGroupRef.current || !isModelLoaded) return;
@@ -387,6 +401,33 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
     // Update material-based blur-in animation
     const animationState = blurAnimation.updateAnimation(time);
     
+    // PRODUCTION DEBUGGING: Log animation state every 2 seconds
+    if (Math.floor(time) % 2 === 0 && Math.floor(time) !== debugLogRef.current) {
+      debugLogRef.current = Math.floor(time);
+      console.log('🎬 Animation State:', {
+        isAnimating: animationState.isAnimating,
+        progress: animationState.progress.toFixed(3),
+        blurAmount: animationState.blurAmount.toFixed(3),
+        startPresentation,
+        time: time.toFixed(1),
+        materialOpacity: materialRef.current?.opacity?.toFixed(3),
+        environment: process.env.NODE_ENV
+      });
+    }
+    
+    // PRODUCTION FAILSAFE: Force opacity to 1.0 after reasonable time
+    const ANIMATION_TIMEOUT = 5.0; // 5 seconds max for animation
+    if (time > ANIMATION_TIMEOUT && materialRef.current && materialRef.current.opacity < 1.0) {
+      console.warn('⚠️ Animation timeout - forcing full opacity');
+      materialRef.current.opacity = 1.0;
+      materialRef.current.roughness = activeMaterialSettings.roughness;
+      materialRef.current.clearcoat = activeMaterialSettings.clearcoat;
+      materialRef.current.needsUpdate = true;
+      // Force animation to stop
+      blurAnimation.reset();
+      return;
+    }
+    
     // Material-based animation for smooth appearance
     if (materialRef.current && animationState.isAnimating && startPresentation) {
       // Calculate blur progress (0 = fully blurred, 1 = clear)
@@ -394,7 +435,8 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
       const smoothProgress = Math.pow(blurProgress, 2); // Quadratic easing for smooth appearance
       
       // Animate opacity from 0.3 to 1.0 for smooth material appearance
-      materialRef.current.opacity = 0.3 + (0.7 * smoothProgress);
+      const targetOpacity = 0.3 + (0.7 * smoothProgress);
+      materialRef.current.opacity = targetOpacity;
       
       // Animate roughness for "focus" effect (higher roughness = more blurred appearance)
       const baseRoughness = activeMaterialSettings.roughness;
@@ -406,16 +448,30 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
       materialRef.current.clearcoat = baseClearcoat * smoothProgress;
       
       // PERFORMANCE: Only update material when properties actually change
-      if (materialRef.current.opacity !== (0.3 + (0.7 * smoothProgress)) ||
-          materialRef.current.roughness !== blurRoughness ||
-          materialRef.current.clearcoat !== baseClearcoat * smoothProgress) {
-        materialRef.current.needsUpdate = true;
+      materialRef.current.needsUpdate = true;
+      
+      // PRODUCTION DEBUG: Log when animation should be near completion
+      if (smoothProgress > 0.95) {
+        console.log('🎯 Animation near completion:', {
+          smoothProgress: smoothProgress.toFixed(3),
+          targetOpacity: targetOpacity.toFixed(3),
+          isAnimating: animationState.isAnimating
+        });
       }
-    } else if (materialRef.current && !animationState.isAnimating) {
-      // PERFORMANCE: Animation complete - only update if needed
-      if (materialRef.current.opacity !== 1.0 ||
+    } else if (materialRef.current && (!animationState.isAnimating || !startPresentation)) {
+      // PERFORMANCE: Animation complete or not started - ensure full opacity
+      const needsUpdate = materialRef.current.opacity !== 1.0 ||
           materialRef.current.roughness !== activeMaterialSettings.roughness ||
-          materialRef.current.clearcoat !== activeMaterialSettings.clearcoat) {
+          materialRef.current.clearcoat !== activeMaterialSettings.clearcoat;
+          
+      if (needsUpdate) {
+        console.log('🎯 Setting final material properties:', {
+          oldOpacity: materialRef.current.opacity.toFixed(3),
+          newOpacity: 1.0,
+          startPresentation,
+          isAnimating: animationState.isAnimating
+        });
+        
         materialRef.current.opacity = 1.0;
         materialRef.current.roughness = activeMaterialSettings.roughness;
         materialRef.current.clearcoat = activeMaterialSettings.clearcoat;
