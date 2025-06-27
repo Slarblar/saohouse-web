@@ -458,7 +458,6 @@ const Hero3D: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
   const [settings, setSettings] = useState<PostProcessingSettings>(defaultSettings);
-  const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
   const deviceInfo = useDeviceDetection();
   
   // Load settings with auto-discovery on component mount
@@ -475,10 +474,8 @@ const Hero3D: React.FC = () => {
           material: loadedSettings.material
         });
         setSettings(loadedSettings);
-        setIsSettingsLoaded(true);
       } catch (error) {
         console.error('❌ Hero3D: Failed to load settings:', error);
-        setIsSettingsLoaded(true);
       }
     };
 
