@@ -253,12 +253,6 @@ const ResponsiveCameraController = ({ deviceInfo }: { deviceInfo: any }) => {
 };
 
 const Hero3D: React.FC = () => {
-  // BASIC PRODUCTION DEBUG
-  console.log('🔵 Hero3D component mounting!', {
-    NODE_ENV: process.env.NODE_ENV,
-    location: window.location.href
-  });
-  
   const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
   const deviceInfo = useDeviceDetection();
