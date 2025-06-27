@@ -25,7 +25,7 @@ import './Hero3D.css';
 const SETTINGS_STORAGE_KEY = 'saohouse-settings';
 
 // Set to true when you need to adjust settings
-const SHOW_CONTROLS = false;
+const SHOW_CONTROLS = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost' || window.location.port === '3001'; // ← Auto-detect local environment
 
 const defaultSettings: PostProcessingSettings = {
   toneMapping: {
@@ -621,6 +621,12 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
 
   useEffect(() => {
     console.log('🎬 Hero3DLens: Component mounted');
+    console.log('🎛️ SHOW_CONTROLS:', SHOW_CONTROLS);
+    console.log('🌍 Environment info:', {
+      NODE_ENV: process.env.NODE_ENV,
+      hostname: window.location.hostname,
+      port: window.location.port
+    });
   }, []);
 
   // Load settings with auto-discovery
