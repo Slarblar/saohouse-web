@@ -4,7 +4,6 @@ import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { useCursorPosition } from '../hooks/useCursorPosition';
 import { useResponsive3D } from '../hooks/useResponsive3D';
-import { useBlurInAnimation } from '../hooks/useBlurInAnimation';
 
 interface MaterialSettings {
   roughness: number;
@@ -20,28 +19,17 @@ interface MaterialSettings {
 
 interface ChromeObjectProps {
   materialSettings?: MaterialSettings;
-  followCursor?: boolean;
   onResponsiveChange?: (isTransitioning: boolean) => void;
-  onBlurInUpdate?: (blurAmount: number, isAnimating: boolean) => void;
   onModelLoaded?: (isLoaded: boolean) => void;
   onMaterialsReady?: () => void;
-  enableCursorFollowing?: boolean;
-  startPresentation?: boolean;
 }
 
 const ChromeObject: React.FC<ChromeObjectProps> = ({ 
   materialSettings, 
-  followCursor = true,
   onResponsiveChange,
-  onBlurInUpdate,
   onModelLoaded,
-  onMaterialsReady,
-  enableCursorFollowing = true,
-  startPresentation = false
+  onMaterialsReady
 }) => {
-  // AGGRESSIVE PREVENTION: Use ref to prevent multiple starts
-  const hasStartedPresentationRef = useRef(false);
-  
   // Alternative logging method that can't be stripped
   (window as any).saoDebug = (window as any).saoDebug || {};
   (window as any).saoDebug.chromeObjectMounted = true;
@@ -52,9 +40,6 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
   const parentGroupRef = useRef<THREE.Group>(null);
   // Child group for visual positioning
   const childGroupRef = useRef<THREE.Group>(null);
-  
-  // Modular blur-in animation - no hardcoded duration!
-  const blurAnimation = useBlurInAnimation(); // Use default from hook
   
   // Get responsive configuration with loading callback
   const { scale, position: visualOffset } = useResponsive3D(
@@ -68,16 +53,8 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
   
   // Animation state
   const lastCursorMoveRef = useRef(Date.now());
-  const isResettingRef = useRef(false);
-  const resetCompleteTimeRef = useRef(0);
-  const targetRotationRef = useRef({ x: 0, y: 0, z: 0 });
-  const previousCursorRef = useRef({ x: 0, y: 0 });
+  const lastCursorPositionRef = useRef({ x: 0, y: 0 });
   
-  // Enhanced easing function
-  const easeInOutQuint = (t: number): number => {
-    return t < 0.5 ? 16 * t * t * t * t * t : 1 - Math.pow(-2 * t + 2, 5) / 2;
-  };
-
   // Load the logo model with aggressive preloading
   const gltf = useGLTF('/objects/sao-logo.glb');
   const [isModelLoaded, setIsModelLoaded] = useState(false);
@@ -140,12 +117,10 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
     }
   }, []);
 
-  // Track cursor movement for reset logic - modular cooldown
-  const COOLDOWN_DURATION = 300; // Keep as reasonable default
-  
+  // Track cursor movement for reset logic
   useEffect(() => {
     const currentCursor = cursorPosition;
-    const prevCursor = previousCursorRef.current;
+    const prevCursor = lastCursorPositionRef.current;
     
     const moveThreshold = 0.001;
     const hasMoved = Math.abs(currentCursor.normalizedX - prevCursor.x) > moveThreshold || 
@@ -153,14 +128,8 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
     
     if (hasMoved) {
       const now = Date.now();
-      
-      const isInResetCooldown = isResettingRef.current || (resetCompleteTimeRef.current > 0 && now - resetCompleteTimeRef.current < COOLDOWN_DURATION);
-      
-      if (!isInResetCooldown) {
-        lastCursorMoveRef.current = now;
-        isResettingRef.current = false;
-        previousCursorRef.current = { x: currentCursor.normalizedX, y: currentCursor.normalizedY };
-      }
+      lastCursorMoveRef.current = now;
+      lastCursorPositionRef.current = { x: currentCursor.normalizedX, y: currentCursor.normalizedY };
     }
   }, [cursorPosition.normalizedX, cursorPosition.normalizedY]);
 
@@ -322,13 +291,6 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
     }
   };
 
-  const ANIMATION = {
-    ACTIVATION_SPEED: 0.8,
-    DEACTIVATION_SPEED: 1.2,
-    FLOAT_SPEED: 0.2,
-    FLOAT_AMPLITUDE: 0.06
-  };
-
   interface RotationState {
     x: number;
     y: number;
@@ -338,17 +300,13 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
   const currentVelocityRef = useRef<RotationState>({ x: 0, y: 0, z: 0 });
   const activationLoggedRef = useRef<boolean>(false);
   const resetStartTimeRef = useRef<number>(0);
-  const lastCursorPositionRef = useRef({ x: 0, y: 0 });
-  const lastCursorMoveTimeRef = useRef(0);
 
   // PERFORMANCE: Frame rate monitoring and optimization
   const debugLogRef = useRef<number>(0);
   const idleDetectionRef = useRef<number>(0);
-  const frameTimeRef = useRef<number>(0);
-  const fpsCounterRef = useRef<number>(0);
   
   // Clean useFrame - Essential functionality only
-  useFrame((state, delta) => {
+  useFrame((state) => {
     if (!parentGroupRef.current || !childGroupRef.current || !isModelLoaded) return;
 
     // Ensure full opacity on every frame (silent)
@@ -367,7 +325,7 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
       Math.abs(cursorPosition.normalizedY - lastCursorPositionRef.current.y) > CURSOR_FOLLOW.MIN_MOVEMENT;
 
     if (cursorMoved) {
-      lastCursorMoveTimeRef.current = time;
+      lastCursorMoveRef.current = time;
       lastCursorPositionRef.current = {
         x: cursorPosition.normalizedX,
         y: cursorPosition.normalizedY
@@ -383,7 +341,6 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
       // Reset all refs to prevent memory leaks
       lastCursorMoveRef.current = 0;
       resetStartTimeRef.current = 0;
-      isResettingRef.current = false;
       cursorActivationDelayRef.current = 0;
       animationActivationRef.current = 0;
       componentStartTimeRef.current = 0;
@@ -415,7 +372,6 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
       }
       
       // Reset state objects
-      targetRotationRef.current = { x: 0, y: 0, z: 0 };
       currentVelocityRef.current = { x: 0, y: 0, z: 0 };
       lastCursorPositionRef.current = { x: 0, y: 0 };
       

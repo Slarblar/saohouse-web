@@ -854,9 +854,6 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
           
           <ChromeObject 
             materialSettings={settings.material} 
-            followCursor={true}
-            enableCursorFollowing={true}
-            startPresentation={true}
             onModelLoaded={handleModelLoaded}
             onMaterialsReady={handleMaterialsReady}
           />
