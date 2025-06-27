@@ -301,13 +301,19 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
         envMapIntensity: activeMaterialSettings.envMapIntensity,
         toneMapped: activeMaterialSettings.toneMapped,
         transparent: true, // Enable for blur effect
-        opacity: 1.0, // Start fully visible - animation will control this
+        opacity: 1.0, // IMMEDIATE FIX: Start at full opacity
         // Performance optimizations for 60fps
         side: THREE.FrontSide,
         flatShading: false,
         vertexColors: false,
         fog: false,
       });
+      
+      // IMMEDIATE PRODUCTION FIX: Set full opacity and final properties immediately
+      console.log('🚀 IMMEDIATE FIX: Setting full opacity on material creation');
+      materialRef.current.opacity = 1.0;
+      materialRef.current.roughness = activeMaterialSettings.roughness;
+      materialRef.current.clearcoat = activeMaterialSettings.clearcoat;
       
       // PERFORMANCE: Warm up GPU for the material
       materialRef.current.needsUpdate = true;
@@ -408,6 +414,20 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
   // Single unified useFrame optimized for 60fps
   useFrame((state, delta) => {
     if (!parentGroupRef.current || !childGroupRef.current || !isModelLoaded) return;
+
+    // PRODUCTION BYPASS: Skip all animation in production
+    if (process.env.NODE_ENV === 'production' && materialRef.current) {
+      // Ensure full opacity in production - no animations
+      if (materialRef.current.opacity !== 1.0) {
+        materialRef.current.opacity = 1.0;
+        materialRef.current.roughness = activeMaterialSettings.roughness;
+        materialRef.current.clearcoat = activeMaterialSettings.clearcoat;
+        materialRef.current.needsUpdate = true;
+        console.log('🎯 Production bypass - forced full opacity');
+      }
+      // Skip all animation logic in production
+      return;
+    }
 
     // PERFORMANCE: Monitor frame time for 60fps optimization
     frameTimeRef.current += delta;
