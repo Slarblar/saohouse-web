@@ -29,11 +29,11 @@ const SHOW_CONTROLS = process.env.NODE_ENV === 'development' || window.location.
 
 const defaultSettings: PostProcessingSettings = {
   toneMapping: {
-    mode: ToneMappingMode.ACES_FILMIC,
-    exposure: 1.2,
-    whitePoint: 16.0,
-    middleGrey: 0.6,
-    adaptation: 1.0,
+    mode: ToneMappingMode.REINHARD2,
+    exposure: 1.6,
+    whitePoint: 21.0,
+    middleGrey: 0.35,
+    adaptation: 1.2,
   },
   bloom: {
     intensity: 0.8,

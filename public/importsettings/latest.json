@@ -3,7 +3,7 @@
   "timestamp": "2025-06-27T01:27:54.445Z",
   "settings": {
     "toneMapping": {
-      "mode": 6,
+      "mode": 2,
       "exposure": 1.6,
       "whitePoint": 21,
       "middleGrey": 0.35,

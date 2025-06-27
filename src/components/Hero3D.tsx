@@ -20,7 +20,7 @@ const SETTINGS_STORAGE_KEY = 'saohouse-settings';
 // Default settings - synchronized with Hero3DLens and latest.json
 const defaultSettings: PostProcessingSettings = {
   toneMapping: {
-    mode: 6,
+    mode: 2,
     exposure: 1.6,
     whitePoint: 21,
     middleGrey: 0.35,
