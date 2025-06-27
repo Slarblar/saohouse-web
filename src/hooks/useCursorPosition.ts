@@ -16,7 +16,8 @@ export const useCursorPosition = (): CursorPosition => {
   })
   
   const lastMoveTimeRef = useRef<number>(0)
-  const debugCounter = useRef<number>(0)
+  // PERFORMANCE: Debug counter removed for optimal build size
+  // const debugCounter = useRef<number>(0)
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
