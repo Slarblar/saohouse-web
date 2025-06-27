@@ -15,6 +15,9 @@ const PremiumHero: React.FC = () => {
 
   useEffect(() => {
     console.log('🚀 PremiumHero: Component mounted');
+    console.log('🔍 ENVIRONMENT CHECK - Using Hero3DLens component');
+    console.log('📍 NODE_ENV:', process.env.NODE_ENV);
+    console.log('🌐 Production URL detection:', window.location.hostname);
   }, []);
 
   useEffect(() => {

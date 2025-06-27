@@ -17,7 +17,7 @@ import './Hero3D.css';
 
 const SETTINGS_STORAGE_KEY = 'saohouse-settings';
 
-// Default settings - same as Hero3DLens
+// Default settings - synchronized with Hero3DLens and latest.json
 const defaultSettings: PostProcessingSettings = {
   toneMapping: {
     mode: 6,
@@ -106,7 +106,7 @@ const defaultSettings: PostProcessingSettings = {
     clearcoat: 0.9,
     clearcoatRoughness: 0.39,
     ior: 2.13,
-    color: "#7a7a7a",
+    color: "#cccccc",
     toneMapped: true
   }
 };
