@@ -19,6 +19,26 @@
   user-select: none;
 }
 
+/* Stats panel */
+.stats-panel {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  z-index: 2000 !important; /* Increased z-index to ensure visibility */
+  color: white !important;
+  background-color: transparent !important;
+  pointer-events: none !important;
+}
+
+.stats-panel > div {
+  color: white !important;
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+.stats-panel canvas {
+  opacity: 0.9 !important;
+}
+
 /* Canvas container ensures proper positioning without interfering with 3D coordinates */
 .hero-3d-container > canvas {
   position: absolute !important;
@@ -28,6 +48,17 @@
   height: 100% !important;
   display: block !important;
   outline: none;
+  
+  /* Enhanced hardware acceleration for smooth blur animations */
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  will-change: filter, opacity;
+  -webkit-will-change: filter, opacity;
+  isolation: isolate;
+  -webkit-isolation: isolate;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  
   /* Touch optimization */
   touch-action: manipulation;
 }
@@ -69,7 +100,7 @@
   touch-action: manipulation;
 }
 
-/* Loading screen with fade-out animation */
+/* Loading screen with enhanced blur fade-out animation */
 .loading-screen {
   position: absolute;
   top: 0;
@@ -84,12 +115,36 @@
   z-index: 1000;
   font-family: system-ui, -apple-system, sans-serif;
   opacity: 1;
-  transition: opacity 0.3s ease-in-out;
+  
+  /* Enhanced hardware acceleration for smooth blur transitions */
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  will-change: filter, opacity, transform;
+  -webkit-will-change: filter, opacity, transform;
+  isolation: isolate;
+  -webkit-isolation: isolate;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  
+  /* Smooth transition with cubic-bezier for natural motion */
+  transition: opacity 1.2s cubic-bezier(0.25, 0.1, 0.25, 1),
+              filter 1.2s cubic-bezier(0.25, 0.1, 0.25, 1),
+              backdrop-filter 1.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+  -webkit-transition: opacity 1.2s cubic-bezier(0.25, 0.1, 0.25, 1),
+                      -webkit-filter 1.2s cubic-bezier(0.25, 0.1, 0.25, 1),
+                      -webkit-backdrop-filter 1.2s cubic-bezier(0.25, 0.1, 0.25, 1);
   padding: 1rem;
 }
 
 .loading-screen.fade-out {
   opacity: 0;
+  filter: blur(10px);
+  -webkit-filter: blur(10px);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  pointer-events: none;
+  transform: translate3d(0, 0, 0) scale(1.02);
+  -webkit-transform: translate3d(0, 0, 0) scale(1.02);
 }
 
 .loading-text {
@@ -431,6 +486,49 @@
 }
 
 /* ============ ANIMATION KEYFRAMES ============ */
+
+/* Enhanced blur-in animation for 3D canvas */
+@keyframes canvasBlurIn {
+  0% {
+    filter: blur(15px);
+    -webkit-filter: blur(15px);
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(1.01);
+    -webkit-transform: translate3d(0, 0, 0) scale(1.01);
+  }
+  
+  25% {
+    filter: blur(10px);
+    -webkit-filter: blur(10px);
+    opacity: 0.4;
+    transform: translate3d(0, 0, 0) scale(1.005);
+    -webkit-transform: translate3d(0, 0, 0) scale(1.005);
+  }
+  
+  50% {
+    filter: blur(5px);
+    -webkit-filter: blur(5px);
+    opacity: 0.7;
+    transform: translate3d(0, 0, 0) scale(1.002);
+    -webkit-transform: translate3d(0, 0, 0) scale(1.002);
+  }
+  
+  75% {
+    filter: blur(2px);
+    -webkit-filter: blur(2px);
+    opacity: 0.9;
+    transform: translate3d(0, 0, 0) scale(1.001);
+    -webkit-transform: translate3d(0, 0, 0) scale(1.001);
+  }
+  
+  100% {
+    filter: blur(0px);
+    -webkit-filter: blur(0px);
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    -webkit-transform: translate3d(0, 0, 0) scale(1);
+  }
+}
 
 @keyframes heroFadeIn {
   from {

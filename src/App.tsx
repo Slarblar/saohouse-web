@@ -1,11 +1,11 @@
 // React import not needed in modern React with automatic JSX transform
-import Hero3DLens from './components/Hero3DLens';
+import PremiumHero from './components/PremiumHero';
 import FloatingButtons from './components/FloatingButtons';
 
 function App() {
   return (
     <div className="app">
-      <Hero3DLens />
+      <PremiumHero />
       <FloatingButtons />
     </div>
   );

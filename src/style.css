@@ -266,7 +266,7 @@ body.modal-open > #root {
   }
 }
 
-/* Reduce motion for accessibility */
+/* Reduce motion for accessibility - preserve subtle hover effects */
 @media (prefers-reduced-motion: reduce) {
   .modal-content,
   .signup-modal {
@@ -278,11 +278,18 @@ body.modal-open > #root {
     animation: none;
   }
   
-  * {
+  /* Only disable large motion animations, preserve subtle interactions */
+  *:not(.social-icon-btn):not(.comms-btn) {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  
+  /* Allow subtle button pulse animations as they don't cause motion sickness */
+  .social-icon-btn,
+  .comms-btn {
+    animation: subtlePulse 10s ease-in-out infinite !important;
   }
 }
 

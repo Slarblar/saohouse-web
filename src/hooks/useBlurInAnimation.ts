@@ -8,13 +8,13 @@ interface BlurInAnimationState {
   scale: number;
 }
 
-export const useBlurInAnimation = (duration: number = 2.5) => { // Faster, more consistent fade-in
+export const useBlurInAnimation = (duration: number = 2.0) => { // Optimized timing for coordinated intro
   const [animationState, setAnimationState] = useState<BlurInAnimationState>({
-    isAnimating: false, // Don't start animating until explicitly started
+    isAnimating: false,
     progress: 0,
-    blurAmount: 6.0, // Further reduced initial blur for better visibility
-    opacity: 0.3, // Higher initial visibility to prevent flicker
-    scale: 1.0 // Maintain full size - no scaling animation
+    blurAmount: 2.5, // Reduced starting blur for faster completion
+    opacity: 1.0, // Material handles opacity directly
+    scale: 1.0
   });
   
   const startTime = useRef<number>(0);
@@ -25,30 +25,29 @@ export const useBlurInAnimation = (duration: number = 2.5) => { // Faster, more 
       startTime.current = currentTime;
     }
     
-    // Calculate progress
+    // Calculate progress for coordinated material blur
     const elapsed = currentTime - startTime.current;
     const progress = Math.min(elapsed / duration, 1);
     
-    // Ultra-slow materialization - like object forming from mist
-    const easeOutSine = (t: number): number => Math.sin((t * Math.PI) / 2);
-    const easeInQuart = (t: number): number => t * t * t * t;
+    // Coordinated easing - smooth but not too slow
+    const easeOutCubic = (t: number): number => {
+      return 1 - Math.pow(1 - t, 3); // Smooth material transition
+    };
     
-    // Fast, consistent progression to prevent flicker
-    const gentleStart = Math.pow(progress, 1.0); // Linear progression for consistency
-    const blurProgress = easeOutSine(gentleStart); // Quick blur clearing
-    const opacityProgress = easeInQuart(Math.max(0, progress - 0.1)); // Earlier opacity start
+    // Material blur progression - optimized for coordination
+    const materialProgress = easeOutCubic(progress);
     
-    // Fast, consistent materialization to eliminate flicker
-    const blurAmount = Math.max(0, 6.0 * (1 - Math.pow(blurProgress, 0.9))); // Faster blur reduction from 6 to 0
-    const opacity = Math.min(1.0, 0.3 + (0.7 * Math.pow(opacityProgress, 0.5))); // Quicker opacity progression
-    const scale = 1.0; // No scaling - maintain position and size
+    // Coordinated animation values - complete smoothly for button intro
+    const blurAmount = Math.max(0, 2.5 * (1 - Math.pow(materialProgress, 1.4))); // Faster completion
+    const opacity = 1.0; // Material handles this directly
+    const scale = 1.0; // No scaling for stability
     
-    // Ensure smooth completion with coordinated timing
-    const isStillAnimating = progress < 0.95; // Slightly earlier completion for reliable handoff
+    // Complete animation efficiently for coordination
+    const isStillAnimating = progress < 0.95; // Natural completion for coordination
     
     const newState: BlurInAnimationState = {
       isAnimating: isStillAnimating,
-      progress: blurProgress, // Use blur progress for tracking
+      progress: materialProgress,
       blurAmount,
       opacity,
       scale
@@ -64,8 +63,8 @@ export const useBlurInAnimation = (duration: number = 2.5) => { // Faster, more 
     setAnimationState({
       isAnimating: true,
       progress: 0,
-      blurAmount: 6.0,
-      opacity: 0.3,
+      blurAmount: 2.5, // Coordinated starting state
+      opacity: 1.0, // Material handles opacity
       scale: 1.0
     });
   }, []);
@@ -75,8 +74,8 @@ export const useBlurInAnimation = (duration: number = 2.5) => { // Faster, more 
     setAnimationState({
       isAnimating: false,
       progress: 0,
-      blurAmount: 6.0,
-      opacity: 0.3,
+      blurAmount: 2.5,
+      opacity: 1.0,
       scale: 1.0
     });
   }, []);

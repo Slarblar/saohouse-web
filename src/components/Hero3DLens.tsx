@@ -1,15 +1,12 @@
 import React, { Suspense, useState, useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Environment } from '@react-three/drei';
+import { OrbitControls, Environment, Stats } from '@react-three/drei';
 import { 
   EffectComposer,
   Bloom,
-  ChromaticAberration,
   ToneMapping,
   Vignette,
-  BrightnessContrast,
-  Noise,
-  N8AO
+  ChromaticAberration
 } from '@react-three/postprocessing';
 import { Effect, BlendFunction } from 'postprocessing';
 import * as THREE from 'three';
@@ -17,16 +14,14 @@ import ChromeObject from './ChromeObject';
 import { ToneMappingMode } from 'postprocessing';
 import ToneMappingControls from './ToneMappingControls';
 import SettingsManager from './SettingsManager';
-import LoadingOverlay from './LoadingOverlay';
-import BlurInEffect from './BlurInEffect';
-import { useLoadingState } from '../hooks/useLoadingState';
+// BlurInEffect removed - using material-based blur instead
 import type { PostProcessingSettings } from './ToneMappingControls';
 import './Hero3D.css';
 
 const SETTINGS_STORAGE_KEY = 'saohouse-settings';
 
 // Set to true when you need to adjust settings
-const SHOW_CONTROLS = false;
+const SHOW_CONTROLS = true;
 
 const defaultSettings: PostProcessingSettings = {
   toneMapping: {
@@ -40,7 +35,7 @@ const defaultSettings: PostProcessingSettings = {
     intensity: 0.8,
     luminanceThreshold: 0.85,
     luminanceSmoothing: 0.4,
-    mipmapBlur: true,
+    mipmapBlur: false,
     opacity: 0.8,
   },
   chromaticAberration: {
@@ -56,15 +51,15 @@ const defaultSettings: PostProcessingSettings = {
     radialIntensity: 1.0,
   },
   filmGrain: {
-    intensity: 0.3,
-    opacity: 0.15,
+    intensity: 0.15,
+    opacity: 0.1,
   },
   ssao: {
-    intensity: 0.5,
-    radius: 1.0,
+    intensity: 0.3,
+    radius: 0.8,
     bias: 0.05,
-    samples: 16,
-    rings: 4,
+    samples: 8,
+    rings: 3,
     distanceThreshold: 1.0,
     distanceFalloff: 0.5,
   },
@@ -234,36 +229,37 @@ const CustomLensDistortion: React.FC<{ settings: PostProcessingSettings['lensDis
   return <primitive object={effect} />;
 };
 
-// Animated Environment Component
+// Optimized 60fps HDRI Animation Component with smooth interpolation
 const AnimatedEnvironment: React.FC<{ 
   preset: string; 
   background: boolean; 
   enabled: boolean;
   baseRotation: number;
 }> = ({ preset, background, enabled, baseRotation }) => {
-  const [currentRotation, setCurrentRotation] = useState(baseRotation);
+  const rotationRef = useRef(baseRotation);
+  const [environmentRotation, setEnvironmentRotation] = useState([0, baseRotation, 0]);
+  const lastUpdateTime = useRef(0);
 
   useFrame((state) => {
     if (enabled) {
-      // Smooth, slow HDRI rotation for luxury effect
+      // Calculate rotation at 60fps with optimized updates
       const time = state.clock.getElapsedTime();
-      const newRotation = baseRotation + (time * 0.14); // 75% faster rotation speed
-      setCurrentRotation(newRotation);
+      const newRotation = baseRotation + (time * 0.08); // Slower, more elegant rotation
+      
+      // Only update React state at 30fps to maintain smoothness without over-rendering
+      if (time - lastUpdateTime.current > 1/30) { // 30fps updates for React
+        rotationRef.current = newRotation;
+        setEnvironmentRotation([0, newRotation, 0]);
+        lastUpdateTime.current = time;
+      }
     }
   });
-
-  // Log rotation changes for debugging (less frequent)
-  useEffect(() => {
-    if (enabled) {
-      
-    }
-  }, [enabled, Math.floor(currentRotation * 2) / 2]); // Log every 0.5 radian change
 
   return (
     <Environment 
       preset={preset as any}
       background={background}
-      environmentRotation={[0, currentRotation, 0]}
+      environmentRotation={environmentRotation as [number, number, number]}
     />
   );
 };
@@ -434,6 +430,15 @@ const AnimatedOrbitControls: React.FC = () => {
       minDistance={3}
       maxDistance={8}
       rotateSpeed={0.5}
+      mouseButtons={{
+        LEFT: THREE.MOUSE.ROTATE,
+        MIDDLE: THREE.MOUSE.DOLLY,
+        RIGHT: THREE.MOUSE.PAN
+      }}
+      touches={{
+        ONE: THREE.TOUCH.ROTATE,
+        TWO: THREE.TOUCH.DOLLY_PAN
+      }}
     />
   );
 };
@@ -451,42 +456,107 @@ const ToneMappingExposure: React.FC<{ exposure: number }> = ({ exposure }) => {
 };
 
 // Function to load settings from public folder
-const loadSettingsFromPublic = async (): Promise<PostProcessingSettings> => {
+// 🎯 MODULAR SETTINGS DISCOVERY
+// Automatically loads whatever settings file is in /public/importsettings
+// Just drop any .json settings file in the folder and it will be auto-discovered!
+const discoverAndLoadSettings = async (): Promise<PostProcessingSettings> => {
   try {
-    // First try to fetch the specific file we know exists
-    const response = await fetch('/importsettings/saohouse-settings-2025-06-24 (2).json');
-    if (!response.ok) {
-      throw new Error(`Failed to fetch settings: ${response.status}`);
-    }
-    const data = await response.json();
-    
-    
-    // Extract settings from the JSON structure and merge with defaults
-    const importedSettings = data.settings || data;
-    return {
-      ...defaultSettings,
-      ...importedSettings,
-      toneMapping: { ...defaultSettings.toneMapping, ...importedSettings.toneMapping },
-      bloom: { ...defaultSettings.bloom, ...importedSettings.bloom },
-      chromaticAberration: { ...defaultSettings.chromaticAberration, ...importedSettings.chromaticAberration },
-      filmGrain: { ...defaultSettings.filmGrain, ...importedSettings.filmGrain },
-      ssao: { ...defaultSettings.ssao, ...importedSettings.ssao },
-      blur: { ...defaultSettings.blur, ...importedSettings.blur },
-      depthOfField: { ...defaultSettings.depthOfField, ...importedSettings.depthOfField },
-      lensDistortion: { ...defaultSettings.lensDistortion, ...importedSettings.lensDistortion },
-      motionBlur: { ...defaultSettings.motionBlur, ...importedSettings.motionBlur },
-      hdri: { ...defaultSettings.hdri, ...importedSettings.hdri },
-      godRays: { ...defaultSettings.godRays, ...importedSettings.godRays },
-      material: { ...defaultSettings.material, ...importedSettings.material },
+    // Generate smart file patterns based on current date and common naming conventions
+    const generateFilePatterns = (): string[] => {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const yDay = String(yesterday.getDate()).padStart(2, '0');
+      const yMonth = String(yesterday.getMonth() + 1).padStart(2, '0');
+      
+      return [
+        // TODAY's patterns (highest priority)
+        `saohouse-settings-${year}-${month}-${day} (3).json`,
+        `saohouse-settings-${year}-${month}-${day} (2).json`, 
+        `saohouse-settings-${year}-${month}-${day} (1).json`,
+        `saohouse-settings-${year}-${month}-${day}.json`,
+        
+        // YESTERDAY's patterns (second priority)
+        `saohouse-settings-${year}-${yMonth}-${yDay} (3).json`,
+        `saohouse-settings-${year}-${yMonth}-${yDay} (2).json`,
+        `saohouse-settings-${year}-${yMonth}-${yDay} (1).json`,
+        `saohouse-settings-${year}-${yMonth}-${yDay}.json`,
+        
+        // Recent weeks (third priority)
+        'saohouse-settings-2025-06-27 (1).json',
+        'saohouse-settings-2025-06-26 (1).json',
+        'saohouse-settings-2025-06-25 (1).json',
+        'saohouse-settings-2025-06-24 (2).json',
+        'saohouse-settings-2025-06-24 (1).json',
+        'saohouse-settings-2025-06-23 (1).json',
+        
+        // Generic/fallback patterns (lowest priority)
+        'latest.json',
+        'current.json', 
+        'settings.json',
+        'saohouse-settings.json',
+        'latest-settings.json',
+        'current-settings.json',
+        'production.json',
+        'config.json'
+      ];
     };
+
+    const potentialFiles = generateFilePatterns();
+    console.log('🔍 Auto-discovering settings in /public/importsettings...');
+    console.log(`📁 Checking ${potentialFiles.length} potential file patterns...`);
+    
+    // Try each potential file until we find one that works
+    for (const filename of potentialFiles) {
+      try {
+        const response = await fetch(`/importsettings/${filename}`);
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Validate that it's actually a settings file
+          if (data && (data.settings || data.toneMapping || data.material)) {
+            console.log(`✅ Found and loaded settings: ${filename}`);
+            console.log(`📊 Settings timestamp: ${data.timestamp || 'Unknown'}`);
+            
+            // Extract settings from the JSON structure and merge with defaults
+            const importedSettings = data.settings || data;
+            return {
+              ...defaultSettings,
+              ...importedSettings,
+              toneMapping: { ...defaultSettings.toneMapping, ...importedSettings.toneMapping },
+              bloom: { ...defaultSettings.bloom, ...importedSettings.bloom },
+              chromaticAberration: { ...defaultSettings.chromaticAberration, ...importedSettings.chromaticAberration },
+              filmGrain: { ...defaultSettings.filmGrain, ...importedSettings.filmGrain },
+              ssao: { ...defaultSettings.ssao, ...importedSettings.ssao },
+              blur: { ...defaultSettings.blur, ...importedSettings.blur },
+              depthOfField: { ...defaultSettings.depthOfField, ...importedSettings.depthOfField },
+              lensDistortion: { ...defaultSettings.lensDistortion, ...importedSettings.lensDistortion },
+              motionBlur: { ...defaultSettings.motionBlur, ...importedSettings.motionBlur },
+              hdri: { ...defaultSettings.hdri, ...importedSettings.hdri },
+              godRays: { ...defaultSettings.godRays, ...importedSettings.godRays },
+              material: { ...defaultSettings.material, ...importedSettings.material },
+            };
+          }
+        }
+      } catch (fileError) {
+        // Continue to next file - this is expected for missing files
+        continue;
+      }
+    }
+    
+    throw new Error('No valid settings files found in /public/importsettings/');
+    
   } catch (error) {
-    console.warn('Failed to load settings from public folder, falling back to localStorage or defaults:', error);
+    console.warn('⚠️ Failed to auto-discover settings, falling back to localStorage or defaults:', error);
     
     // Fallback to localStorage
     try {
       const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
+        console.log('📱 Loaded settings from localStorage fallback');
         return {
           ...defaultSettings,
           ...parsed,
@@ -504,118 +574,114 @@ const loadSettingsFromPublic = async (): Promise<PostProcessingSettings> => {
           material: { ...defaultSettings.material, ...parsed.material },
         };
       }
+      console.log('🔧 Using default settings (no saved settings found)');
       return defaultSettings;
     } catch (localStorageError) {
-      console.warn('Failed to load settings from localStorage:', localStorageError);
+      console.warn('❌ Failed to load settings from localStorage:', localStorageError);
+      console.log('🔧 Using default settings (localStorage failed)');
       return defaultSettings;
     }
   }
 };
 
-const Hero3DLens: React.FC = () => {
+interface Hero3DLensProps {
+  onReady?: () => void;
+}
+
+const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
   // Load settings with priority: public folder > localStorage > defaults
   const [settings, setSettings] = useState<PostProcessingSettings>(defaultSettings);
-  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
-  const [isModelLoaded, setIsModelLoaded] = useState(false);
   const [showControls, setShowControls] = useState(false);
   
-  // Use our new loading state hook
-  const { 
-    isLoading: isShowingLoadingOverlay, 
-    loadingType, 
-    message: loadingMessage,
-    completeInitialLoading,
-    startTransition,
-    completeTransition 
-  } = useLoadingState();
 
-  // Blur-in animation state
-  const [blurInState, setBlurInState] = useState({ blurAmount: 0, isAnimating: false });
-
-  // Show unified loading experience - only wait for settings, let model load in background
-  const showLoadingOverlay = isLoadingSettings || isShowingLoadingOverlay;
   
-  // Debug loading state
+  // Simplified loading phases - PremiumHero handles loading UI
+  const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
+  const [isModelLoaded, setIsModelLoaded] = useState(false);
+  const [isMaterialsReady, setIsMaterialsReady] = useState(false);
+
   useEffect(() => {
-    console.log('📊 Loading overlay state:', { 
-      showLoadingOverlay, 
-      isLoadingSettings, 
-      isShowingLoadingOverlay, 
-      isModelLoaded 
-    });
-  }, [showLoadingOverlay, isLoadingSettings, isShowingLoadingOverlay, isModelLoaded]);
-  
-  // Track when everything is fully loaded (loading overlay gone + blur-in complete)
-  const isFullyLoaded = !showLoadingOverlay && !blurInState.isAnimating;
-  
-  // Log when cursor following becomes active
-  useEffect(() => {
-    if (isFullyLoaded) {
-  
-    }
-  }, [isFullyLoaded]);
+    console.log('🎬 Hero3DLens: Component mounted');
+  }, []);
 
-  // Load settings from public folder on component mount
+  // Load settings with auto-discovery
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const loadedSettings = await loadSettingsFromPublic();
+        const loadedSettings = await discoverAndLoadSettings();
         setSettings(loadedSettings);
-
+        setIsSettingsLoaded(true);
       } catch (error) {
         console.error('Failed to load settings:', error);
-      } finally {
-        setIsLoadingSettings(false);
-        // Give Canvas time to render, then dismiss loading overlay
-        setTimeout(() => {
-          completeInitialLoading();
-        }, 1500); // Longer delay to ensure everything is ready
+        setIsSettingsLoaded(true);
       }
     };
 
     loadSettings();
-  }, [completeInitialLoading]); // Only run on mount
-
-
+  }, []);
 
   // Save settings to localStorage whenever they change (but not on initial load)
   useEffect(() => {
-    if (!isLoadingSettings) {
+    if (isSettingsLoaded) {
       try {
         localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
       } catch (error) {
         console.warn('Failed to save settings to localStorage:', error);
       }
     }
-  }, [settings, isLoadingSettings]);
+  }, [settings, isSettingsLoaded]);
+
+  // Handle model loading completion
+  const handleModelLoaded = (loaded: boolean) => {
+    // PERFORMANCE: Logging disabled for optimal FPS
+    // console.log('📦 Hero3DLens: Model loaded:', loaded);
+    if (loaded && !isModelLoaded) {
+      setIsModelLoaded(true);
+    }
+  };
+
+  // Handle materials ready
+  const handleMaterialsReady = () => {
+    // PERFORMANCE: Logging disabled for optimal FPS
+    // console.log('🎨 Hero3DLens: Materials ready');
+    if (!isMaterialsReady) {
+      setIsMaterialsReady(true);
+    }
+  };
+
+  // Handle final presentation phase - notify parent when ready
+  useEffect(() => {
+    // PERFORMANCE: Logging disabled for optimal FPS
+    // console.log('🔍 Hero3DLens: Loading state check:', {
+    //   isSettingsLoaded,
+    //   isModelLoaded,
+    //   isMaterialsReady
+    // });
+    
+    if (isSettingsLoaded && isModelLoaded && isMaterialsReady) {
+      // PERFORMANCE: Logging disabled for optimal FPS
+      // console.log('🎯 Hero3DLens: All loaded, calling onReady');
+      // Notify parent component that the scene is ready
+      if (onReady) {
+        onReady();
+      }
+    }
+  }, [isSettingsLoaded, isModelLoaded, isMaterialsReady, onReady]);
 
   const handleSettingsChange = (newSettings: PostProcessingSettings) => {
     setSettings(newSettings);
-
   };
 
   const handleSettingsLoad = (newSettings: PostProcessingSettings) => {
     setSettings(newSettings);
-
   };
-
-  useEffect(() => {
-
-  }, []);
-
-  // Debug tone mapping changes
-  useEffect(() => {
-
-  }, [settings.toneMapping]);
 
   return (
     <div className="hero-3d-container">
-      {/* Unified Loading Overlay */}
-      <LoadingOverlay 
-        isVisible={showLoadingOverlay}
-        message={isLoadingSettings ? 'Loading SAO House...' : loadingMessage}
-        type={loadingType}
-      />
+      <Stats showPanel={0} className="stats-panel" />
+      
+
+
 
       {/* Development Controls - Only shown when SHOW_CONTROLS is true */}
       {SHOW_CONTROLS && (
@@ -656,22 +722,42 @@ const Hero3DLens: React.FC = () => {
         </>
       )}
 
-      {/* Canvas always renders, loading overlay handles the transition */}
+      {/* Canvas with enhanced quality settings for crisp rendering */}
       <Canvas
-          camera={{ position: [0, 0, 5], fov: 50 }}
-                  style={{ 
+        camera={{ position: [0, 0, 3], fov: 75 }}
+        style={{ 
           width: '100vw', 
           height: '100vh',
-          opacity: 1
+          opacity: 1,
+          pointerEvents: 'auto'
         }}
         gl={{ 
           antialias: true,
           alpha: false,
           stencil: false,
           depth: true,
-          powerPreference: "high-performance"
+          powerPreference: "high-performance",
+          // Enhanced rendering settings for crisp quality
+          preserveDrawingBuffer: false,
+          premultipliedAlpha: false,
+          logarithmicDepthBuffer: false,
         }}
-        onCreated={() => {}}
+        // PERFORMANCE: Optimized pixel ratio for smooth FPS with crisp visuals
+        dpr={[1, 2]} // Range from 1x to 2x pixel density (3x was causing FPS drops)
+        onCreated={({ gl, scene }) => {
+          // PERFORMANCE: Optimized shadow settings for smooth FPS
+          gl.shadowMap.enabled = true;
+          gl.shadowMap.type = THREE.PCFShadowMap; // Balanced quality/performance (was PCFSoftShadowMap)
+          gl.outputColorSpace = THREE.SRGBColorSpace;
+          gl.toneMapping = THREE.ACESFilmicToneMapping;
+          gl.toneMappingExposure = 1.0;
+          
+          // PERFORMANCE: Optimized pixel ratio for smooth FPS
+          gl.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+          
+          // Scene optimizations for crisp edges
+          scene.fog = null; // Remove fog for crisp edges
+        }}
       >
         <color attach="background" args={['#000000']} />
         
@@ -702,30 +788,20 @@ const Hero3DLens: React.FC = () => {
         
         <Suspense fallback={null}>
           <ToneMappingExposure exposure={settings.toneMapping.exposure} />
+          
+
+          
           <ChromeObject 
             materialSettings={settings.material} 
             followCursor={true}
-            followIntensity={0.3}
-            enableCursorFollowing={isFullyLoaded}
-            startPresentation={!showLoadingOverlay} // Start presentation after loading overlay disappears
-            onResponsiveChange={(isTransitioning) => {
-              if (isTransitioning) {
-                startTransition('Adjusting for screen size...');
-              } else {
-                completeTransition();
-              }
-            }}
-            onBlurInUpdate={(blurAmount, isAnimating) => {
-              setBlurInState({ blurAmount, isAnimating });
-            }}
-            onModelLoaded={(isLoaded) => {
-          
-              setIsModelLoaded(isLoaded);
-            }}
+            enableCursorFollowing={true}
+            startPresentation={true}
+            onModelLoaded={handleModelLoaded}
+            onMaterialsReady={handleMaterialsReady}
           />
           <AnimatedOrbitControls />
           
-          {/* Post-processing effects with lens distortion */}
+          {/* Post-processing effects with all the cool visual effects */}
           <EffectComposer>
             <ToneMapping 
               mode={settings.toneMapping.mode}
@@ -744,44 +820,14 @@ const Hero3DLens: React.FC = () => {
             />
             
             <ChromaticAberration 
-              offset={settings.chromaticAberration.enabled ? settings.chromaticAberration.offset as [number, number] : [0, 0]}
-              blendFunction={settings.chromaticAberration.enabled ? undefined : 0}
+              offset={[settings.chromaticAberration.offset[0] * 0.002, settings.chromaticAberration.offset[1] * 0.002]}
             />
             
-            {/* Custom Lens Distortion Effect */}
-            {settings.lensDistortion.enabled ? (
-              <CustomLensDistortion settings={settings.lensDistortion} />
-            ) : (
-              <></>
-            )}
+            <CustomLensDistortion settings={settings.lensDistortion} />
             
             <Vignette
               offset={settings.lensDistortion.vignette}
               darkness={0.5}
-            />
-
-            <BrightnessContrast 
-              brightness={0}
-              contrast={0.1}
-            />
-
-            <Noise 
-              opacity={settings.filmGrain.opacity}
-            />
-
-            {/* Use N8AO instead of SSAO as it's more modern and self-contained */}
-            <N8AO
-              intensity={settings.ssao.intensity}
-              aoRadius={settings.ssao.radius}
-              aoSamples={settings.ssao.samples}
-              denoiseSamples={8}
-              denoiseRadius={12}
-            />
-            
-            {/* Dynamic blur-in effect for 3D model entrance - connected to actual animation */}
-            <BlurInEffect 
-              blurAmount={blurInState.blurAmount} 
-              opacity={1.0}
             />
           </EffectComposer>
         </Suspense>

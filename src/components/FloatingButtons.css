@@ -21,25 +21,25 @@
   position: fixed;
   bottom: 2rem;
   left: 50%;
-  transform: translateX(-50%);
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 0.75rem;
-  padding: 0.75rem;
-  z-index: 1100; /* Higher z-index to ensure they're above 3D content */
+  /* MINIMAL: No background, no border, no container styling */
+  background: transparent;
+  border: none;
+  padding: 0;
   
-  /* Ensure touch events work */
-  pointer-events: auto;
-  touch-action: manipulation;
-  
-  /* Entry animation */
+  /* COORDINATED INTRO: Wait for 3D material blur to complete (2.0s) + buffer (0.5s) */
   opacity: 0;
-  animation: buttonBarFadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 1.5s forwards;
+  visibility: hidden;
+  transform: translateX(-50%) translateY(20px);
+  animation: buttonBarFadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 2.8s forwards;
   
-  /* Performance optimization */
+  /* Performance optimizations */
   will-change: transform, opacity;
+  transform-origin: center bottom;
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .social-icon-btn,
@@ -50,19 +50,24 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  /* GLASSMORPHISM: Beautiful button styling restored */
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.12) 0%,
     rgba(255, 255, 255, 0.06) 50%,
     rgba(255, 255, 255, 0.1) 100%
   );
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px) saturate(120%) brightness(105%);
+  -webkit-backdrop-filter: blur(15px) saturate(120%) brightness(105%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: rgba(255, 255, 255, 0.85);
   text-decoration: none;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
   cursor: pointer;
+  /* GLASSMORPHISM: Subtle depth shadows */
   box-shadow: 
+    0 4px 15px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.2),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   
@@ -77,14 +82,15 @@
   min-width: 44px;
   min-height: 44px;
   
-  /* Subtle pulse animation */
-  animation: subtlePulse 6s ease-in-out infinite;
+  /* COORDINATED PULSE: Start only after intro completes (2.8s + 0.8s = 3.6s) */
+  animation: subtlePulse 6s ease-in-out 3.8s infinite;
   
   /* Performance optimization */
   will-change: transform, background, box-shadow;
   backface-visibility: hidden;
 }
 
+/* GLASSMORPHISM: Beautiful shimmer hover effects restored */
 .social-icon-btn::before,
 .comms-btn::before {
   content: '';
@@ -114,6 +120,7 @@
 .comms-btn:hover,
 .social-icon-btn:focus,
 .comms-btn:focus {
+  /* GLASSMORPHISM: Beautiful hover effects restored */
   transform: translateY(-2px);
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.2) 0%,
@@ -122,10 +129,13 @@
     rgba(255, 255, 255, 0.15) 75%,
     rgba(255, 255, 255, 0.25) 100%
   );
+  backdrop-filter: blur(20px) saturate(130%) brightness(110%);
+  -webkit-backdrop-filter: blur(20px) saturate(130%) brightness(110%);
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: rgba(255, 255, 255, 0.95);
+  /* GLASSMORPHISM: Enhanced hover shadows */
   box-shadow: 
-    0 6px 20px rgba(0, 0, 0, 0.15),
+    0 8px 25px rgba(0, 0, 0, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   outline: none;
@@ -373,12 +383,17 @@
 
 /* Entry animation keyframes */
 @keyframes buttonBarFadeIn {
-  from {
+  0% {
     opacity: 0;
+    visibility: hidden;
     transform: translateX(-50%) translateY(20px);
   }
-  to {
+  1% {
+    visibility: visible;
+  }
+  100% {
     opacity: 1;
+    visibility: visible;
     transform: translateX(-50%) translateY(0);
   }
 }
@@ -387,12 +402,14 @@
   0%, 100% {
     transform: scale(1);
     box-shadow: 
+      0 4px 15px rgba(0, 0, 0, 0.1),
       inset 0 1px 0 rgba(255, 255, 255, 0.2),
       inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   }
   50% {
     transform: scale(1.02);
     box-shadow: 
+      0 6px 20px rgba(0, 0, 0, 0.12),
       inset 0 1px 0 rgba(255, 255, 255, 0.3),
       inset 0 -1px 0 rgba(0, 0, 0, 0.1),
       0 0 15px rgba(255, 255, 255, 0.1);
@@ -408,7 +425,7 @@
     gap: 0.5rem;
     padding: 0.5rem;
     /* Reduce animation intensity on mobile */
-    animation: buttonBarFadeIn 0.6s ease-out 1.2s forwards;
+          animation: buttonBarFadeIn 0.6s ease-out 2.8s forwards;
   }
 
   .social-icon-btn,
@@ -417,8 +434,8 @@
     height: 44px;
     min-width: 44px;
     min-height: 44px;
-    /* Simplified animations for better performance */
-    animation: none;
+    /* COORDINATED PULSE: Light animation for mobile after intro completes */
+    animation: subtlePulse 8s ease-in-out 3.8s infinite;
   }
 
   .social-icon-btn svg,
@@ -490,8 +507,8 @@
   .comms-btn {
     width: 46px;
     height: 46px;
-    /* Reduced pulse animation */
-    animation: subtlePulse 8s ease-in-out infinite;
+    /* COORDINATED PULSE: Reduced animation after intro completes */
+    animation: subtlePulse 8s ease-in-out 3.8s infinite;
   }
 
   .modal-content {
@@ -798,23 +815,23 @@
   }
 }
 
-/* Reduce motion for accessibility */
+/* Reduce motion for accessibility - but preserve subtle interactions */
 @media (prefers-reduced-motion: reduce) {
   .floating-buttons {
-    animation: none;
-    opacity: 1;
+    animation: buttonBarFadeIn 1s ease 0.5s forwards; /* Keep entry animation but slower */
+    opacity: 0;
   }
 
   .social-icon-btn,
   .comms-btn {
-    animation: none;
-    transition: none;
+    animation: subtlePulse 12s ease-in-out infinite; /* Keep subtle pulse but slower */
+    transition: transform 0.2s ease; /* Keep gentle hover transitions */
   }
 
   .social-icon-btn:hover,
   .comms-btn:hover,
   .submit-btn:hover {
-    transform: none;
+    transform: scale(1.02); /* Reduce hover scale effect */
   }
 
   .spinner {

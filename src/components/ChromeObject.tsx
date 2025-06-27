@@ -21,21 +21,21 @@ interface MaterialSettings {
 interface ChromeObjectProps {
   materialSettings?: MaterialSettings;
   followCursor?: boolean;
-  followIntensity?: number;
   onResponsiveChange?: (isTransitioning: boolean) => void;
   onBlurInUpdate?: (blurAmount: number, isAnimating: boolean) => void;
   onModelLoaded?: (isLoaded: boolean) => void;
+  onMaterialsReady?: () => void;
   enableCursorFollowing?: boolean;
-  startPresentation?: boolean; // New prop to trigger presentation animation
+  startPresentation?: boolean;
 }
 
 const ChromeObject: React.FC<ChromeObjectProps> = ({ 
   materialSettings, 
   followCursor = true,
-  followIntensity = 0.3,
   onResponsiveChange,
   onBlurInUpdate,
   onModelLoaded,
+  onMaterialsReady,
   enableCursorFollowing = true,
   startPresentation = false
 }) => {
@@ -44,56 +44,57 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
   // Child group for visual positioning
   const childGroupRef = useRef<THREE.Group>(null);
   
-  // Blur-in animation hook with fast, consistent timing
-  const blurAnimation = useBlurInAnimation(2.5); // 2.5 seconds for quick, consistent fade-in
+  // Modular blur-in animation - no hardcoded duration!
+  const blurAnimation = useBlurInAnimation(); // Use default from hook
   
   // Get responsive configuration with loading callback
   const { scale, position: visualOffset } = useResponsive3D(
-    undefined, // use default settings
-    true,      // enable mobile reload
-    onResponsiveChange // pass the loading callback
+    undefined,
+    true,
+    onResponsiveChange
   );
   
   // Get cursor position
   const cursorPosition = useCursorPosition();
   
-  // Enhanced floating animation state
-  const velocityRef = useRef(new THREE.Vector3(0, 0, 0));
-  const momentumRef = useRef(new THREE.Vector3(0, 0, 0));
-  const easingFactorRef = useRef(0);
+  // Debug cursor position changes
+  useEffect(() => {
+    console.log('🖱️ Cursor position updated:', {
+      x: cursorPosition.normalizedX.toFixed(3),
+      y: cursorPosition.normalizedY.toFixed(3)
+    });
+  }, [cursorPosition.normalizedX, cursorPosition.normalizedY]);
   
-  // Reset animation state - ensure everything starts at perfect zero
+  // Animation state
   const lastCursorMoveRef = useRef(Date.now());
   const isResettingRef = useRef(false);
   const resetCompleteTimeRef = useRef(0);
-  const targetRotationRef = useRef(new THREE.Vector3(0, 0, 0));
-  const currentRotationRef = useRef(new THREE.Vector3(0, 0, 0));
+  const targetRotationRef = useRef({ x: 0, y: 0, z: 0 });
   const previousCursorRef = useRef({ x: 0, y: 0 });
   
-  // Smooth blending state for seamless cursor activation
-  const baseAnimationStateRef = useRef(new THREE.Vector3(0, 0, 0));
-  const cursorInfluenceRef = useRef(0); // 0 = pure base animation, 1 = pure cursor following
-  
-  // Easing functions for smooth floating animation
-  const easeInOutCubic = (t: number): number => {
-    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  // Enhanced easing function
+  const easeInOutQuint = (t: number): number => {
+    return t < 0.5 ? 16 * t * t * t * t * t : 1 - Math.pow(-2 * t + 2, 5) / 2;
   };
-  
 
-  
-  // Minimal debugging - removed excessive re-renders
-  
-  // Load the logo model and track loading state
+  // Load the logo model with aggressive preloading
   const gltf = useGLTF('/objects/sao-logo.glb');
   const [isModelLoaded, setIsModelLoaded] = useState(false);
-  const [presentationStarted, setPresentationStarted] = useState(false);
+  const [isMaterialsReady, setIsMaterialsReady] = useState(false);
   
-  // Preload the model for consistent loading
+  // PERFORMANCE: Aggressive preloading for front-loaded performance
   useGLTF.preload('/objects/sao-logo.glb');
   
-  // Model loaded when gltf.scene exists
+  // Error handling for GLTF loading
+  useEffect(() => {
+    console.log('🔍 GLTF Loading Status:', {
+      hasGltf: !!gltf,
+      hasScene: !!gltf?.scene,
+      sceneChildren: gltf?.scene?.children?.length || 0
+    });
+  }, [gltf]);
   
-  // Default material settings
+  // Default material settings - now modular
   const defaultMaterialSettings: MaterialSettings = {
     roughness: 0.01,
     metalness: 1.0,
@@ -108,90 +109,97 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
 
   const activeMaterialSettings = materialSettings || defaultMaterialSettings;
 
-  // Initialize cursor movement timer on first load and ensure zero rotation start
+  // Initialize cursor movement timer and component start time on first load
   useEffect(() => {
     if (lastCursorMoveRef.current === 0) {
-      lastCursorMoveRef.current = Date.now(); // Initialize with current time
+      lastCursorMoveRef.current = Date.now();
     }
     
-    // Ensure parent group starts with zero rotation (default state)
+    // Initialize component start time for 1.5s delay
+    if (componentStartTimeRef.current === 0) {
+      componentStartTimeRef.current = performance.now() / 1000; // Convert to seconds
+    }
+    
     if (parentGroupRef.current) {
       parentGroupRef.current.rotation.set(0, 0, 0);
     }
   }, []);
 
-  // Track cursor movement for reset logic with enhanced sensitivity
+  // Track cursor movement for reset logic - modular cooldown
+  const COOLDOWN_DURATION = 300; // Keep as reasonable default
+  
   useEffect(() => {
     const currentCursor = cursorPosition;
     const prevCursor = previousCursorRef.current;
     
-    // Adaptive threshold based on screen size for immediate floating response
-    const moveThreshold = 0.001; // Even more responsive detection for ultra-smooth cursor following
+    const moveThreshold = 0.001;
     const hasMoved = Math.abs(currentCursor.normalizedX - prevCursor.x) > moveThreshold || 
                      Math.abs(currentCursor.normalizedY - prevCursor.y) > moveThreshold;
     
     if (hasMoved) {
       const now = Date.now();
       
-      // Only register cursor movement if we're not in reset cooldown
       const isInResetCooldown = isResettingRef.current || (resetCompleteTimeRef.current > 0 && now - resetCompleteTimeRef.current < COOLDOWN_DURATION);
       
       if (!isInResetCooldown) {
         lastCursorMoveRef.current = now;
         isResettingRef.current = false;
         previousCursorRef.current = { x: currentCursor.normalizedX, y: currentCursor.normalizedY };
-        
-        // Reset momentum when cursor moves again
-        if (easingFactorRef.current < 0.1) {
-          momentumRef.current.set(0, 0, 0);
-        }
       }
     }
   }, [cursorPosition.normalizedX, cursorPosition.normalizedY]);
 
-
-
-  // Track when model is loaded reliably
+  // Track when model is loaded - notify parent immediately
   useEffect(() => {
     if (gltf.scene && !isModelLoaded) {
-      
-      
-      // Mark as loaded immediately for reliable timing
+      console.log('✅ 3D Model loaded successfully!');
       setIsModelLoaded(true);
       
-      // Notify parent component that model is ready
       if (onModelLoaded) {
         onModelLoaded(true);
       }
     }
   }, [gltf.scene, isModelLoaded, onModelLoaded]);
 
-  // Single effect to handle presentation start - eliminates race conditions
+  // Handle presentation start - simplified, no competing states
   useEffect(() => {
-    if (startPresentation && isModelLoaded && !presentationStarted) {
+    if (startPresentation && isModelLoaded && isMaterialsReady) {
+      console.log('🎭 Starting presentation - all systems ready');
       
-      setPresentationStarted(true);
-      blurAnimation.start();
+      // Start blur-in immediately when everything is ready
+      requestAnimationFrame(() => {
+        blurAnimation.start();
+      });
     }
-  }, [startPresentation, isModelLoaded, presentationStarted, blurAnimation]);
+  }, [startPresentation, isModelLoaded, isMaterialsReady, blurAnimation]);
 
-  // Apply materials and handle responsive settings - run only once when model loads
+  // Set final material properties after animations are done
+  useEffect(() => {
+    if (!blurAnimation.isAnimating && materialRef.current) {
+      materialRef.current.opacity = 1.0;
+      materialRef.current.roughness = activeMaterialSettings.roughness;
+      materialRef.current.clearcoat = activeMaterialSettings.clearcoat;
+      materialRef.current.needsUpdate = true;
+    }
+  }, [blurAnimation.isAnimating, activeMaterialSettings]);
+
+  // UNIFIED VISIBILITY: Single source of truth - no competing states
+  const shouldRender = isModelLoaded; // Render when model is loaded, presentation controls opacity
+
+  // Apply materials and handle responsive settings - modular material system with direct blur
   const materialRef = useRef<THREE.MeshPhysicalMaterial | null>(null);
   const materialsInitialized = useRef(false);
   
   useEffect(() => {
     if (gltf.scene && !materialsInitialized.current) {
-      
-      
-      // Center the model geometry at origin to fix any internal offset
+      // Center the model at origin using scene position
       const box = new THREE.Box3().setFromObject(gltf.scene);
       const center = box.getCenter(new THREE.Vector3());
       
       // Apply the offset to center the model properly at origin
       gltf.scene.position.set(-center.x, -center.y, -center.z);
       
-      
-      // Create material once and apply to all meshes
+      // PERFORMANCE: Create optimized material for 60fps rendering with blur capability
       materialRef.current = new THREE.MeshPhysicalMaterial({
         color: activeMaterialSettings.color,
         metalness: activeMaterialSettings.metalness,
@@ -202,298 +210,455 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
         reflectivity: activeMaterialSettings.reflectivity,
         envMapIntensity: activeMaterialSettings.envMapIntensity,
         toneMapped: activeMaterialSettings.toneMapped,
-        transparent: true, // Always enable transparency for smooth animations
-        opacity: 1.0
+        transparent: true, // Enable for blur effect
+        opacity: 1.0, // Start fully visible - animation will control this
+        // Performance optimizations for 60fps
+        side: THREE.FrontSide,
+        flatShading: false,
+        vertexColors: false,
+        fog: false,
       });
       
-      // Apply materials to all meshes - ONE TIME SETUP
+      // PERFORMANCE: Warm up GPU for the material
+      materialRef.current.needsUpdate = true;
+      
+      // PERFORMANCE: Apply materials and optimize geometry for 60fps
       gltf.scene.traverse((child: THREE.Object3D) => {
         if (child instanceof THREE.Mesh) {
           child.material = materialRef.current;
+          
+          // Front-load geometry optimization for 60fps performance
+          if (child.geometry) {
+            child.geometry.computeVertexNormals(); // Smooth normals
+            child.geometry.normalizeNormals(); // Consistent lighting
+            
+            // PERFORMANCE: Pre-compute expensive operations
+            if (child.geometry.attributes.position) {
+              child.geometry.computeBoundingBox();
+              child.geometry.computeBoundingSphere();
+            }
+            
+            // Shadow optimization
+            child.castShadow = true;
+            child.receiveShadow = true;
+            
+            // Animation performance optimization
+            child.frustumCulled = true;
+            child.matrixAutoUpdate = true;
+            
+            // PERFORMANCE: Mark geometry as static for GPU optimization
+            (child.geometry as any).dynamic = false;
+          }
         }
       });
       
       materialsInitialized.current = true;
+      setIsMaterialsReady(true); // Notify that materials are ready
       
+      // Notify parent component
+      if (onMaterialsReady) {
+        onMaterialsReady();
+      }
+    }
+  }, [gltf.scene, activeMaterialSettings, onMaterialsReady]);
+
+  // Animation activation state
+  const animationActivationRef = useRef<number>(0);
+  const cursorActivationDelayRef = useRef<number>(0);
+  const componentStartTimeRef = useRef<number>(0);
+
+  // Constants for cursor following with 1.5s initial delay
+  const CURSOR_FOLLOW = {
+    INITIAL_DELAY: 1.5,        // 1.5 second delay before cursor following begins
+    ACTIVATION_DELAY: 0.2,     // Much faster activation after initial delay
+    RAMP_DURATION: 1.0,        // Reduced for faster ramp up
+    ROTATION_SCALE: 0.1,
+    MIN_MOVEMENT: 0.001,       // Slightly increased threshold
+    SMOOTHING: 0.045,
+    RESET_DURATION: 2.0,
+    IDLE_TIMEOUT: 1.5,         // 1.5 second timeout for cursor following
+    SPRING: {
+      STRENGTH: 2.5,
+      DAMPENING: 0.92,
+      MIN_VELOCITY: 0.001
+    },
+    ORBIT: {
+      RADIUS: {
+        X: 0.4,                // Increased for more noticeable movement
+        Y: 0.35               // Increased for more noticeable movement  
+      }
+    }
+  };
+
+  const ANIMATION = {
+    ACTIVATION_SPEED: 0.8,
+    DEACTIVATION_SPEED: 1.2,
+    FLOAT_SPEED: 0.2,
+    FLOAT_AMPLITUDE: 0.06
+  };
+
+  interface RotationState {
+    x: number;
+    y: number;
+    z: number;
+  }
+
+  const currentVelocityRef = useRef<RotationState>({ x: 0, y: 0, z: 0 });
+  const activationLoggedRef = useRef<boolean>(false);
+  const resetStartTimeRef = useRef<number>(0);
+  const lastCursorPositionRef = useRef({ x: 0, y: 0 });
+  const lastCursorMoveTimeRef = useRef(0);
+
+  // PERFORMANCE: Frame rate monitoring and optimization
+  const debugLogRef = useRef<number>(0);
+  const idleDetectionRef = useRef<number>(0);
+  const frameTimeRef = useRef<number>(0);
+  const fpsCounterRef = useRef<number>(0);
+  
+  // This effect ensures the material properties are correct after our main animation.
+  useEffect(() => {
+    // We run this when the blurAnimation hook is no longer animating.
+    if (!blurAnimation.isAnimating && materialRef.current) {
+      materialRef.current.opacity = 1.0;
+      materialRef.current.roughness = activeMaterialSettings.roughness;
+      materialRef.current.clearcoat = activeMaterialSettings.clearcoat;
+      materialRef.current.needsUpdate = true;
+    }
+  }, [blurAnimation.isAnimating, activeMaterialSettings]);
+
+  // Single unified useFrame optimized for 60fps
+  useFrame((state, delta) => {
+    if (!parentGroupRef.current || !childGroupRef.current || !isModelLoaded) return;
+
+    // PERFORMANCE: Monitor frame time for 60fps optimization
+    frameTimeRef.current += delta;
+    fpsCounterRef.current++;
+    
+    const time = state.clock.getElapsedTime();
+    
+    // Track cursor movement
+    const cursorMoved = 
+      Math.abs(cursorPosition.normalizedX - lastCursorPositionRef.current.x) > CURSOR_FOLLOW.MIN_MOVEMENT ||
+      Math.abs(cursorPosition.normalizedY - lastCursorPositionRef.current.y) > CURSOR_FOLLOW.MIN_MOVEMENT;
+
+    if (cursorMoved) {
+      lastCursorMoveTimeRef.current = time;
+      lastCursorPositionRef.current = {
+        x: cursorPosition.normalizedX,
+        y: cursorPosition.normalizedY
+      };
     }
     
-    // Cleanup function
+    // Update material-based blur-in animation
+    const animationState = blurAnimation.updateAnimation(time);
+    
+    // Material-based animation for smooth appearance
+    if (materialRef.current && animationState.isAnimating && startPresentation) {
+      // Calculate blur progress (0 = fully blurred, 1 = clear)
+      const blurProgress = 1 - (animationState.blurAmount / 2.5);
+      const smoothProgress = Math.pow(blurProgress, 2); // Quadratic easing for smooth appearance
+      
+      // Animate opacity from 0.3 to 1.0 for smooth material appearance
+      materialRef.current.opacity = 0.3 + (0.7 * smoothProgress);
+      
+      // Animate roughness for "focus" effect (higher roughness = more blurred appearance)
+      const baseRoughness = activeMaterialSettings.roughness;
+      const blurRoughness = Math.min(1.0, baseRoughness + (0.8 * (1 - smoothProgress)));
+      materialRef.current.roughness = blurRoughness;
+      
+      // Animate clearcoat for crystal-clear final appearance
+      const baseClearcoat = activeMaterialSettings.clearcoat;
+      materialRef.current.clearcoat = baseClearcoat * smoothProgress;
+      
+      // PERFORMANCE: Only update material when properties actually change
+      if (materialRef.current.opacity !== (0.3 + (0.7 * smoothProgress)) ||
+          materialRef.current.roughness !== blurRoughness ||
+          materialRef.current.clearcoat !== baseClearcoat * smoothProgress) {
+        materialRef.current.needsUpdate = true;
+      }
+    } else if (materialRef.current && !animationState.isAnimating) {
+      // PERFORMANCE: Animation complete - only update if needed
+      if (materialRef.current.opacity !== 1.0 ||
+          materialRef.current.roughness !== activeMaterialSettings.roughness ||
+          materialRef.current.clearcoat !== activeMaterialSettings.clearcoat) {
+        materialRef.current.opacity = 1.0;
+        materialRef.current.roughness = activeMaterialSettings.roughness;
+        materialRef.current.clearcoat = activeMaterialSettings.clearcoat;
+        materialRef.current.needsUpdate = true;
+      }
+    }
+    
+    // PERFORMANCE: Reduced frame skipping for smoother experience 
+    if (delta > 0.05 && !animationState.isAnimating) {
+      return; // Only skip frames when completely idle (increased threshold)
+    }
+    
+    // Notify parent of blur state (for any UI coordination)
+    if (onBlurInUpdate) {
+      onBlurInUpdate(animationState.blurAmount, animationState.isAnimating);
+    }
+
+    // Handle animation activation - FIXED: Ensure floating animation works even during blur-in
+    const currentAnimationMultiplier = animationState.isAnimating
+      ? Math.max(animationActivationRef.current - delta * ANIMATION.DEACTIVATION_SPEED, 0.2) // Keep minimum 0.2 for floating
+      : Math.min(animationActivationRef.current + delta * ANIMATION.ACTIVATION_SPEED, 1.0);
+    
+    animationActivationRef.current = currentAnimationMultiplier;
+    
+    // Always increment cursor activation delay - don't reset during blur animation
+    cursorActivationDelayRef.current += delta;
+
+    // Calculate base floating animation - perfectly straight with no rotation
+    const baseRotationX = 0; // No X rotation for straight appearance
+    const baseRotationY = 0; // No Y rotation for straight appearance
+    const baseRotationZ = 0; // No Z rotation for straight appearance
+
+    // Calculate time since component start for initial delay
+    const timeSinceStart = time - componentStartTimeRef.current;
+    const hasPassedInitialDelay = timeSinceStart >= CURSOR_FOLLOW.INITIAL_DELAY;
+    
+    // Simplified cursor following activation with initial delay
+    const timeSinceLastMove = time - lastCursorMoveTimeRef.current;
+    const isCursorIdle = timeSinceLastMove > CURSOR_FOLLOW.IDLE_TIMEOUT;
+    
+    // Allow cursor following only after initial delay and when not manually interacting
+    const canFollowCursor = followCursor && enableCursorFollowing && hasPassedInitialDelay && !isCursorIdle;
+    
+    // Calculate smooth transition multiplier for cursor following activation
+    const transitionProgress = hasPassedInitialDelay 
+      ? Math.min((timeSinceStart - CURSOR_FOLLOW.INITIAL_DELAY) / CURSOR_FOLLOW.RAMP_DURATION, 1.0)
+      : 0.0;
+    const cursorFollowMultiplier = easeInOutQuint(transitionProgress);
+    
+    // DEBUG DISABLED FOR PERFORMANCE - Re-enable for debugging only
+    // if (Math.floor(time * 2) % 2 === 0) {
+    //   console.log('🎯 Cursor Following:', {
+    //     canFollowCursor,
+    //     isCursorIdle: isCursorIdle ? 'YES' : 'NO',
+    //     activationDelay: cursorActivationDelayRef.current.toFixed(1),
+    //     timeSinceMove: timeSinceLastMove.toFixed(1)
+    //   });
+    // }
+
+
+
+    // PERFORMANCE: Logging disabled for optimal FPS - re-enable for debugging only
+    // debugLogRef.current += delta;
+    // const logInterval = animationState.isAnimating ? 10.0 : 5.0; // Less frequent during blur
+    // if (debugLogRef.current >= logInterval) {
+    //   const avgFps = fpsCounterRef.current / frameTimeRef.current;
+    //   if (!animationState.isAnimating) { // Only log when not blurring for luxury feel
+    //     console.log('🎯 Performance Status:', {
+    //       fps: avgFps.toFixed(1),
+    //       canFollowCursor,
+    //       floatMultiplier: Math.max(currentAnimationMultiplier, 0.3).toFixed(2)
+    //     });
+    //   }
+    //   debugLogRef.current = 0;
+    //   frameTimeRef.current = 0;
+    //   fpsCounterRef.current = 0;
+    // }
+    
+    // PERFORMANCE: Extended idle optimization (reduced console output)
+    idleDetectionRef.current += delta;
+    if (idleDetectionRef.current > 600) { // After 10 minutes of idle (less frequent)
+      // PERFORMANCE: Idle detection logging disabled for optimal FPS
+      // console.log('🛑 Extended idle detected - reducing animation frequency');
+      idleDetectionRef.current = 0;
+      return; // Skip this frame to reduce memory usage
+    }
+    
+    // Handle reset logic - only after initial delay has passed
+    if (isCursorIdle && !isResettingRef.current && hasPassedInitialDelay) {
+      isResettingRef.current = true;
+      resetStartTimeRef.current = time;
+      const currentRotation = parentGroupRef.current.rotation;
+      targetRotationRef.current = {
+        x: currentRotation.x,
+        y: currentRotation.y,
+        z: currentRotation.z
+      };
+    }
+    
+    if (!isCursorIdle && isResettingRef.current) {
+      isResettingRef.current = false;
+    }
+
+    // Apply animations
+    if (isResettingRef.current) {
+      // Reset animation
+      const resetProgress = Math.min((time - resetStartTimeRef.current) / CURSOR_FOLLOW.RESET_DURATION, 1.0);
+      const easeOutProgress = easeInOutQuint(resetProgress);
+      
+      const currentRotation = parentGroupRef.current.rotation;
+      
+      currentRotation.x = targetRotationRef.current.x * (1 - easeOutProgress) + baseRotationX * easeOutProgress;
+      currentRotation.y = targetRotationRef.current.y * (1 - easeOutProgress) + baseRotationY * easeOutProgress;
+      currentRotation.z = targetRotationRef.current.z * (1 - easeOutProgress) + baseRotationZ * easeOutProgress;
+      
+      if (resetProgress === 1.0) {
+        isResettingRef.current = false;
+      }
+    } else if (canFollowCursor) {
+      // PERFORMANCE: Activation logging disabled for optimal FPS
+      // if (!activationLoggedRef.current) {
+      //   console.log('🚀 Orbital cursor following activated');
+      //   activationLoggedRef.current = true;
+      // }
+      
+             // Premium cursor following with sophisticated easing
+       const normalizedX = cursorPosition.normalizedX;
+       const normalizedY = cursorPosition.normalizedY;
+       
+       // Create smooth, premium target rotation with easing curves
+       const easeInOutCubic = (t: number): number => {
+         return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+       };
+       
+       // Smooth interpolation factors for premium feel
+       const xInfluence = easeInOutCubic(Math.abs(normalizedX)) * Math.sign(normalizedX);
+       const yInfluence = easeInOutCubic(Math.abs(normalizedY)) * Math.sign(normalizedY);
+       
+       // Energetic yet refined rotation range for premium feel
+       const maxRotation = 0.18; // Increased from 0.12 for more energetic movement
+       const targetRotationX = -yInfluence * maxRotation * cursorFollowMultiplier;
+       const targetRotationY = xInfluence * maxRotation * cursorFollowMultiplier;
+       const targetRotationZ = xInfluence * maxRotation * 0.25 * cursorFollowMultiplier; // Slightly more Z-axis for depth
+       
+       // More responsive but still elegant interpolation
+       const currentRotation = parentGroupRef.current.rotation;
+       const smoothingFactor = 0.028; // Increased from 0.02 for more energetic response
+       
+       // Premium easing interpolation with smooth transition - feels like floating in premium liquid
+       currentRotation.x += (targetRotationX - currentRotation.x) * smoothingFactor;
+       currentRotation.y += (targetRotationY - currentRotation.y) * smoothingFactor;
+       currentRotation.z += (targetRotationZ - currentRotation.z) * smoothingFactor;
+    } else {
+      // Base animation - smooth transition back to neutral position
+      const currentRotation = parentGroupRef.current.rotation;
+      const smoothing = CURSOR_FOLLOW.SMOOTHING;
+      
+      // Apply smooth transition during initial delay period
+      const neutralTransitionMultiplier = hasPassedInitialDelay ? 1.0 : (1.0 - cursorFollowMultiplier);
+      
+      currentRotation.x += (baseRotationX - currentRotation.x) * smoothing * neutralTransitionMultiplier;
+      currentRotation.y += (baseRotationY - currentRotation.y) * smoothing * neutralTransitionMultiplier;
+      currentRotation.z += (baseRotationZ - currentRotation.z) * smoothing * neutralTransitionMultiplier;
+    }
+    
+    // Apply floating animation to child group - ALWAYS active regardless of other animation states
+    if (childGroupRef.current) {
+      const floatProgress = (time * ANIMATION.FLOAT_SPEED) % (2 * Math.PI);
+      const floatOffset = Math.cos(floatProgress) * ANIMATION.FLOAT_AMPLITUDE * Math.max(currentAnimationMultiplier, 0.3); // Ensure minimum floating
+      
+      childGroupRef.current.position.set(
+        visualOffset[0],
+        visualOffset[1] + floatOffset,
+        visualOffset[2]
+      );
+    }
+  });
+
+  // ENHANCED CLEANUP FUNCTION - MEMORY LEAK PREVENTION
+  useEffect(() => {
     return () => {
+      console.log('🧹 ChromeObject cleanup: Starting comprehensive cleanup');
+      
+      // Reset all refs to prevent memory leaks
+      lastCursorMoveRef.current = 0;
+      resetStartTimeRef.current = 0;
+      isResettingRef.current = false;
+      cursorActivationDelayRef.current = 0;
+      animationActivationRef.current = 0;
+      componentStartTimeRef.current = 0;
+      debugLogRef.current = 0;
+      idleDetectionRef.current = 0;
+      activationLoggedRef.current = false;
+      
+      // Clean up group references
+      if (parentGroupRef.current) {
+        parentGroupRef.current.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            if (child.geometry) {
+              child.geometry.dispose();
+            }
+            if (child.material) {
+              if (Array.isArray(child.material)) {
+                child.material.forEach(material => material.dispose());
+              } else {
+                child.material.dispose();
+              }
+            }
+          }
+        });
+        parentGroupRef.current = null;
+      }
+      
+      if (childGroupRef.current) {
+        childGroupRef.current = null;
+      }
+      
+      // Reset state objects
+      targetRotationRef.current = { x: 0, y: 0, z: 0 };
+      currentVelocityRef.current = { x: 0, y: 0, z: 0 };
+      lastCursorPositionRef.current = { x: 0, y: 0 };
+      
+      // Clean up GLTF resources
+      if (gltf) {
+        gltf.scenes.forEach(scene => {
+          scene.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+              if (child.geometry) {
+                child.geometry.dispose();
+              }
+              if (child.material) {
+                if (Array.isArray(child.material)) {
+                  child.material.forEach(material => material.dispose());
+                } else {
+                  child.material.dispose();
+                }
+              }
+            }
+          });
+        });
+      }
+      
+      // Dispose of material reference
       if (materialRef.current) {
         materialRef.current.dispose();
         materialRef.current = null;
       }
-      materialsInitialized.current = false;
+      
+      console.log('✅ ChromeObject cleanup: Complete');
     };
-  }, [gltf.scene]); // Only depend on scene, not settings
+  }, [gltf]); // Keep gltf dependency for proper cleanup
 
-  // Gradual animation activation state for smooth handoff
-  const animationActivationRef = useRef<number>(0); // 0 = fully suppressed, 1 = fully active
-  const cursorActivationDelayRef = useRef<number>(0); // Track time since blur-in completed for cursor following only
-  const cursorFollowingActivatedRef = useRef<boolean>(false); // Flag to log activation only once
+  // Don't render anything until we should be visible - prevents random popping
+  if (!shouldRender) {
+    return null;
+  }
 
-  // Dynamic timing constants for smooth transitions (no hardcoded values)
-  const CURSOR_ACTIVATION_DELAY = 0.3; // Even faster activation for immediate response
-  const CURSOR_RAMP_DURATION = 0.6; // Reduced for smoother activation
-  const RESET_DELAY = 3000; // Increased to give cursor following more time to work
-  const COOLDOWN_DURATION = 300; // Reduced for quicker reactivation
-  const ANIMATION_ACTIVATION_SPEED = 1.5; // Faster activation
-  const ANIMATION_DEACTIVATION_SPEED = 3.0; // Faster deactivation
-
-  // Throttle frame updates to prevent excessive calculations
-  const lastFrameTime = useRef<number>(0);
-  
-  useFrame((state, delta) => {
-    if (parentGroupRef.current && childGroupRef.current && isModelLoaded) {
-      const time = state.clock.getElapsedTime();
-      const now = Date.now();
-      
-      // Throttle calculations to max 60fps to prevent memory pressure
-      if (now - lastFrameTime.current < 16) { // ~60fps limit
-        return;
-      }
-      lastFrameTime.current = now;
-      
-      // Update blur-in animation only when model is loaded
-      const animationState = blurAnimation.updateAnimation(time);
-      
-      // Notify parent component of blur animation updates
-      if (onBlurInUpdate) {
-        onBlurInUpdate(animationState.blurAmount, animationState.isAnimating);
-      }
-      
-      // Gradual animation activation for smooth handoff (base animations activate immediately)
-      if (animationState.isAnimating) {
-        // During blur-in, keep animations fully suppressed and reset cursor delay timer
-        animationActivationRef.current = Math.max(animationActivationRef.current - delta * ANIMATION_DEACTIVATION_SPEED, 0);
-        cursorActivationDelayRef.current = 0; // Reset cursor delay timer during blur-in
-        cursorFollowingActivatedRef.current = false; // Reset activation flag
-      } else {
-        // After blur-in completes, gradually activate base animations with smooth timing
-        animationActivationRef.current = Math.min(animationActivationRef.current + delta * ANIMATION_ACTIVATION_SPEED, 1.0);
-        
-        // Separately track cursor following delay with reduced timing
-        cursorActivationDelayRef.current += delta;
-      }
-      
-            // Smooth multiplier instead of abrupt 0→1 switch
-      const smoothAnimationMultiplier = easeInOutCubic(animationActivationRef.current);
-      
-      const primaryFloat = Math.sin(time * 0.3) * 0.12 * smoothAnimationMultiplier;
-      const secondaryFloat = Math.sin(time * 0.7) * 0.04 * smoothAnimationMultiplier;
-      const tertiaryFloat = Math.cos(time * 0.5) * 0.06 * smoothAnimationMultiplier;
-      const floatOffset = primaryFloat + secondaryFloat + tertiaryFloat;
-      
-            // Check if we should reset to default with smooth timing
-      // Don't reset if cursor following is active or cursor influence is still present
-      const timeSinceMove = now - lastCursorMoveRef.current;
-      const shouldReset = timeSinceMove > RESET_DELAY && cursorInfluenceRef.current <= 0.01;
-      
-      // Check if we're in the reset cooldown period with reduced duration
-      const isInResetCooldown = isResettingRef.current || (resetCompleteTimeRef.current > 0 && now - resetCompleteTimeRef.current < COOLDOWN_DURATION);
-      
-      // Calculate dynamic easing factor based on cursor activity with ultra-smooth transitions
-      const easingActivationSpeed = 1.5; // Faster activation for responsiveness
-      const easingDeactivationSpeed = 0.8; // Slower deactivation for smoothness
-      
-      if (!shouldReset && !isInResetCooldown) {
-        // When cursor is active and not in cooldown, smoothly increase responsiveness
-        easingFactorRef.current = Math.min(easingFactorRef.current + delta * easingActivationSpeed, 1);
-      } else {
-        // When cursor is idle or in reset cooldown, smoothly decrease responsiveness for floating effect
-        easingFactorRef.current = Math.max(easingFactorRef.current - delta * easingDeactivationSpeed, 0);
-      }
-      
-      // Check if cursor following should be enabled with smooth activation timing
-      const isCursorFollowingReady = cursorActivationDelayRef.current >= CURSOR_ACTIVATION_DELAY;
-      
-      // Simplified condition with smooth timing - more reliable check
-      const simpleTestCondition = followCursor && enableCursorFollowing && !animationState.isAnimating && isCursorFollowingReady && !isResettingRef.current;
-      
-      // Calculate base animation state (always running for smooth blending)
-      let baseRotX = 0;
-      let baseRotY = 0;
-      let baseRotZ = 0;
-      
-      // Completely disable base animation during reset to prevent interference
-      if (smoothAnimationMultiplier > 0.05 && !isResettingRef.current && !isInResetCooldown) {
-        baseRotX = (Math.sin(time * 0.15) * 0.08 + Math.cos(time * 0.23) * 0.03) * smoothAnimationMultiplier;
-        baseRotY = (Math.cos(time * 0.12) * 0.1 + Math.sin(time * 0.31) * 0.04) * smoothAnimationMultiplier;
-        baseRotZ = (Math.sin(time * 0.18) * 0.04 + Math.cos(time * 0.27) * 0.02) * smoothAnimationMultiplier;
-      }
-      
-      // Force base animation to zero during reset
-      if (isResettingRef.current) {
-        baseRotX = 0;
-        baseRotY = 0;
-        baseRotZ = 0;
-      }
-      
-      baseAnimationStateRef.current.set(baseRotX, baseRotY, baseRotZ);
-      
-      // Smooth cursor influence transition (no sudden jumps)
-      if (followCursor && simpleTestCondition) {
-        // Log when cursor following first becomes active (once)
-        if (!cursorFollowingActivatedRef.current) {
-          cursorFollowingActivatedRef.current = true;
-        }
-        
-        // Gradually increase cursor influence for seamless blending
-        const cursorActivationProgress = Math.min((cursorActivationDelayRef.current - CURSOR_ACTIVATION_DELAY) / CURSOR_RAMP_DURATION, 1.0);
-        const targetCursorInfluence = easeInOutCubic(Math.max(0, cursorActivationProgress)) * 0.9; // Increased to 90% cursor influence
-        
-        // Faster transition of cursor influence for more responsive feeling
-        cursorInfluenceRef.current += (targetCursorInfluence - cursorInfluenceRef.current) * delta * 4.0;
-        
-             } else {
-         // Gradually reduce cursor influence when not active
-         cursorInfluenceRef.current = Math.max(cursorInfluenceRef.current - delta * 1.5, 0);
-       }
-       
-       // Always apply blending logic regardless of cursor following state
-       // If cursor influence is zero, this naturally becomes pure base animation
-       const baseInfluence = 1.0 - cursorInfluenceRef.current;
-       const cursorInfluence = cursorInfluenceRef.current;
-       
-       // Calculate cursor-based rotation (even when not actively following)
-       const refinedIntensity = followIntensity * 0.8 * smoothAnimationMultiplier;
-       const cursorRotX = cursorPosition.normalizedY * refinedIntensity * 0.9;
-       const cursorRotY = cursorPosition.normalizedX * refinedIntensity * 1.4;
-       const cursorRotZ = cursorPosition.normalizedX * refinedIntensity * 0.4;
-       
-       // Always blend (when cursorInfluence = 0, this becomes pure base animation)
-       const finalTargetX = baseRotX * baseInfluence + cursorRotX * cursorInfluence;
-       const finalTargetY = baseRotY * baseInfluence + cursorRotY * cursorInfluence;
-       const finalTargetZ = baseRotZ * baseInfluence + cursorRotZ * cursorInfluence;
-       
-       targetRotationRef.current.set(finalTargetX, finalTargetY, finalTargetZ);
-       
-       if (shouldReset && !isResettingRef.current) {
-        // Start reset to default position
-        isResettingRef.current = true;
-        
-        // Clear any momentum and set target to absolute zero for perfect reset
-        momentumRef.current.set(0, 0, 0);
-        velocityRef.current.set(0, 0, 0);
-        targetRotationRef.current.set(0, 0, 0);
-        cursorInfluenceRef.current = 0; // Force cursor influence to zero immediately
-        
-        
-       }
-      
-             // During reset, override everything to force exact zero rotation
-       if (isResettingRef.current) {
-         // Force target to exactly zero (override any blending)
-         targetRotationRef.current.set(0, 0, 0);
-         baseAnimationStateRef.current.set(0, 0, 0); // Also force base animation to zero
-         
-         // Use slower, smoother lerp during reset for gradual return
-         const resetLerpProgress = 0.04; // Much slower and smoother reset
-         currentRotationRef.current.lerp(targetRotationRef.current, resetLerpProgress);
-         
-         // Check if reset animation is complete with very tight threshold
-         const rotationDistance = currentRotationRef.current.distanceTo(targetRotationRef.current);
-         if (rotationDistance < 0.0001) { // Extremely tight threshold for perfect reset
-           // Force exact zero to eliminate any floating point errors
-           currentRotationRef.current.set(0, 0, 0);
-           targetRotationRef.current.set(0, 0, 0);
-           baseAnimationStateRef.current.set(0, 0, 0);
-           
-           // Also force the actual parent group rotation to zero immediately
-           parentGroupRef.current.rotation.set(0, 0, 0);
-           
-           isResettingRef.current = false;
-           resetCompleteTimeRef.current = now;
-           
-         }
-       }
-      
-      // Clear cooldown period when cursor moves again
-      if (!shouldReset && !isInResetCooldown && resetCompleteTimeRef.current > 0) {
-        resetCompleteTimeRef.current = 0;
-        
-      }
-      
-             // Enhanced smooth interpolation with adaptive responsiveness (skip during reset)
-       if (!isResettingRef.current) {
-         const baseLerpFactor = 0.03; // Optimized base speed for smoothness
-         const activityMultiplier = easeInOutCubic(easingFactorRef.current) * 1.8 + 1; // Refined response curve
-         const cursorResponsivenessFactor = enableCursorFollowing && isCursorFollowingReady ? 1.3 : 1.0; // Balanced responsiveness
-         const dynamicLerpFactor = baseLerpFactor * activityMultiplier * cursorResponsivenessFactor;
-         
-         // Apply eased interpolation with adaptive cap
-         const lerpProgress = Math.min(dynamicLerpFactor, 0.1); // Optimized cap for ultra-smooth movement
-         currentRotationRef.current.lerp(targetRotationRef.current, lerpProgress);
-       }
-      
-      // Apply final blended rotations to PARENT group (now seamlessly blended)
-      parentGroupRef.current.rotation.x = currentRotationRef.current.x;
-      parentGroupRef.current.rotation.y = currentRotationRef.current.y;
-      parentGroupRef.current.rotation.z = currentRotationRef.current.z;
-      
-      // Enhanced floating animation to CHILD group position with organic movement (gradually activated)
-      // Remove horizontal float to maintain perfect centering
-      const depthFloat = Math.cos(time * 0.35) * 0.015 * smoothAnimationMultiplier;
-      
-      childGroupRef.current.position.set(
-        visualOffset[0],                    // Perfect horizontal centering - no horizontal drift
-        visualOffset[1] + floatOffset,      // Vertical floating for liveliness
-        visualOffset[2] + depthFloat        // Subtle depth movement
-      );
-      
-      // Update scale with subtle breathing effect (gradually activated after blur-in)
-      const breathingScale = 1 + (Math.sin(time * 0.4) * 0.02 * smoothAnimationMultiplier);
-      
-      // Consistent material opacity handling to prevent flicker
-      const finalOpacity = animationState.isAnimating ? Math.max(animationState.opacity, 0.1) : 1.0; // Ensure minimum visibility
-      const finalScale = animationState.isAnimating ? animationState.scale : 1.0; // Maintain scale consistency
-      
-      // Apply consistent scale (no sudden jumping)
-      childGroupRef.current.scale.setScalar(scale * breathingScale * finalScale);
-      
-      // Apply opacity only to the shared material (no traversal needed)
-      if (materialRef.current) {
-        materialRef.current.opacity = finalOpacity;
-        // Transparency is always enabled from initialization
-      }
-      
-      // Reduced debug logging to prevent memory pressure
-      // Only log significant state changes, not regular updates
-    }
+  console.log('🎯 ChromeObject rendering:', { 
+    shouldRender, 
+    hasScene: !!gltf.scene, 
+    scale, 
+    visualOffset,
+    isModelLoaded,
+    isMaterialsReady,
+    parentGroupPosition: parentGroupRef.current?.position,
+    childGroupPosition: childGroupRef.current?.position,
+    childGroupScale: childGroupRef.current?.scale,
+    gltfScenePosition: gltf.scene?.position
   });
-
-  // Cleanup function for component unmount
-  useEffect(() => {
-    return () => {
-      // Reset all refs to prevent memory leaks
-      lastCursorMoveRef.current = 0;
-      resetCompleteTimeRef.current = 0;
-      isResettingRef.current = false;
-      easingFactorRef.current = 0;
-      
-      // Clear vectors
-      targetRotationRef.current.set(0, 0, 0);
-      currentRotationRef.current.set(0, 0, 0);
-      velocityRef.current.set(0, 0, 0);
-      momentumRef.current.set(0, 0, 0);
-      baseAnimationStateRef.current.set(0, 0, 0);
-      cursorInfluenceRef.current = 0;
-      
-      
-    };
-  }, []);
 
   return (
     <group ref={parentGroupRef} position={[0, 0, 0]}>
       <group ref={childGroupRef} scale={scale} position={visualOffset}>
-        {/* Always render model - opacity controls visibility */}
         {gltf.scene && <primitive object={gltf.scene} />}
+
       </group>
     </group>
   );
 };
-
-// Preload the model
-useGLTF.preload('/objects/sao-logo.glb');
 
 export default ChromeObject; 

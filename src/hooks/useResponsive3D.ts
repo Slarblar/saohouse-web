@@ -23,16 +23,16 @@ interface ResponsiveSettings {
 
 const defaultSettings: ResponsiveSettings = {
   mobile: {
-    portrait: { scale: 0.038, position: [0, 0, 0] },
-    landscape: { scale: 0.0752, position: [0.2, 0.15, 0] } // Reduced by 20% (0.094 * 0.8), moved 0.2 right and 0.15 up
+    portrait: { scale: 0.028, position: [-0.15, 0.2, 0] },
+    landscape: { scale: 0.024, position: [0.05, 0.35, 0] }
   },
   tablet: {
-    portrait: { scale: 0.0369, position: [0.10, 0, 0] }, // Moved 0.05 right from 0.05 (0.05 + 0.05 = 0.10) for iPad Pro portrait
-    landscape: { scale: 0.04631, position: [0.2, 0, 0] } // Increased by 10% (0.0421 * 1.1) and moved 0.2 right for iPad Air landscape
+    portrait: { scale: 0.033, position: [-0.05, 0.2, 0] },
+    landscape: { scale: 0.028, position: [0.05, 0.2, 0] }
   },
   desktop: {
-    portrait: { scale: 0.04183, position: [0.25, 0, 0] }, // Increased by 5% (0.03984 * 1.05) and moved 0.1 left for better centering
-    landscape: { scale: 0.05061, position: [0.25, 0, 0] } // Increased by 5% (0.04820 * 1.05) and moved 0.1 left for better centering
+    portrait: { scale: 0.037, position: [0.10, 0.2, 0] },
+    landscape: { scale: 0.048, position: [0.10, 0.2, 0] }
   }
 };
 
@@ -76,14 +76,14 @@ export const useResponsive3D = (
     if (deviceInfo.isIPad && deviceInfo.type === 'tablet') {
         newConfig = {
             ...newConfig,
-            scale: 0.24,
-            position: [3, 0.25, 0] as [number, number, number]
+            scale: 0.033,
+            position: [2.85, 0.45, 0] as [number, number, number]
         };
     }
 
     // Mobile landscape adjustments
     if (deviceInfo.type === 'mobile' && deviceInfo.orientation === 'landscape') {
-        newConfig.scale = 0.094;
+        newConfig.scale = 0.024;
     }
 
     setConfig(newConfig);

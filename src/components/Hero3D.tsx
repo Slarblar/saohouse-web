@@ -1,6 +1,6 @@
 import React, { Suspense, useState, useEffect, useRef } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { OrbitControls, Environment } from '@react-three/drei';
+import { OrbitControls, Environment, Stats } from '@react-three/drei';
 import { 
   EffectComposer,
   Bloom,
@@ -306,6 +306,7 @@ const Hero3D: React.FC = () => {
   return (
     <ErrorBoundary>
       <div className="hero-3d-container">
+        <Stats showPanel={0} className="stats-panel" />
         {isLoading && (
           <div className="loading-screen">
             <div className="loading-text">
@@ -347,7 +348,6 @@ const Hero3D: React.FC = () => {
             <Suspense fallback={null}>
               <ChromeObject 
                 followCursor={!deviceInfo.isMobile} // Disable cursor following on mobile for better performance
-                followIntensity={deviceInfo.isMobile ? 0 : 0.5} 
               />
               <ResponsiveCameraController deviceInfo={deviceInfo} />
 

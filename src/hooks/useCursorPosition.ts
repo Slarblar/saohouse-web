@@ -15,69 +15,48 @@ export const useCursorPosition = (): CursorPosition => {
     normalizedY: 0,
   })
   
-  const smoothPositionRef = useRef({ normalizedX: 0, normalizedY: 0 })
-  const animationFrameRef = useRef<number | null>(null)
   const lastMoveTimeRef = useRef<number>(0)
+  const debugCounter = useRef<number>(0)
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
       const x = event.clientX
       const y = event.clientY
-      const targetNormalizedX = (x / window.innerWidth) * 2 - 1
-      const targetNormalizedY = -(y / window.innerHeight) * 2 + 1
+      
+      // Direct normalized calculation without smoothing
+      const normalizedX = (x / window.innerWidth) * 2 - 1
+      const normalizedY = -(y / window.innerHeight) * 2 + 1
 
-      const now = performance.now()
-      lastMoveTimeRef.current = now
+      lastMoveTimeRef.current = performance.now()
 
-      // Cancel previous animation frame
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current)
-      }
+      // PERFORMANCE: Cursor movement logging disabled for optimal FPS
+      // debugCounter.current++;
+      // if (debugCounter.current === 100) {
+      //   console.log('🖱️ Cursor tracking active:', {
+      //     normalized: { x: normalizedX.toFixed(3), y: normalizedY.toFixed(3) }
+      //   });
+      //   debugCounter.current = 0; // Reset counter to prevent endless accumulation
+      // }
 
-      // Adaptive smoothing based on movement speed for ultra-smooth transitions
-      const smoothUpdate = () => {
-        // Calculate movement distance for adaptive smoothing
-        const distanceX = Math.abs(targetNormalizedX - smoothPositionRef.current.normalizedX)
-        const distanceY = Math.abs(targetNormalizedY - smoothPositionRef.current.normalizedY)
-        const totalDistance = Math.sqrt(distanceX * distanceX + distanceY * distanceY)
-        
-        // Adaptive lerp factor: faster for larger movements, smoother for fine adjustments
-        const baseLerpFactor = 0.06
-        const speedMultiplier = Math.min(totalDistance * 8 + 1, 3) // Responsive to movement speed
-        const adaptiveLerpFactor = baseLerpFactor * speedMultiplier
-        
-        smoothPositionRef.current.normalizedX += 
-          (targetNormalizedX - smoothPositionRef.current.normalizedX) * adaptiveLerpFactor
-        smoothPositionRef.current.normalizedY += 
-          (targetNormalizedY - smoothPositionRef.current.normalizedY) * adaptiveLerpFactor
-
-        setPosition({
-          x,
-          y,
-          normalizedX: smoothPositionRef.current.normalizedX,
-          normalizedY: smoothPositionRef.current.normalizedY,
-        })
-
-        // Continue smoothing with adaptive threshold
-        const adaptiveThreshold = Math.max(0.0002, totalDistance * 0.1) // Dynamic threshold
-        
-        if (distanceX > adaptiveThreshold || distanceY > adaptiveThreshold) {
-          animationFrameRef.current = requestAnimationFrame(smoothUpdate)
-        }
-      }
-
-      smoothUpdate()
+      // Immediate position update
+      setPosition({
+        x,
+        y,
+        normalizedX,
+        normalizedY,
+      })
     }
 
-    window.addEventListener('mousemove', handleMouseMove)
+    // PERFORMANCE: Initialization logging disabled for optimal FPS
+    // console.log('🖱️ useCursorPosition Hook: Initializing mouse move listener');
+    window.addEventListener('mousemove', handleMouseMove, { passive: false })
     
     return () => {
+      // PERFORMANCE: Cleanup logging disabled for optimal FPS
+      // console.log('🖱️ useCursorPosition Hook: Cleaning up mouse move listener');
       window.removeEventListener('mousemove', handleMouseMove)
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current)
-      }
     }
-  }, [])
+  }, []) // Empty dependency array to avoid re-initialization
 
   return position
 } 
