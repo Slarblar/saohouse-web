@@ -39,6 +39,32 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
   enableCursorFollowing = true,
   startPresentation = false
 }) => {
+  // BASIC PRODUCTION DEBUG: This should ALWAYS show up
+  console.log('🔴 ChromeObject component mounting!', {
+    NODE_ENV: process.env.NODE_ENV,
+    isDev: process.env.NODE_ENV === 'development',
+    isProd: process.env.NODE_ENV === 'production',
+    location: window.location.href,
+    userAgent: navigator.userAgent,
+    startPresentation
+  });
+  
+  // Alternative logging method that can't be stripped
+  (window as any).saoDebug = (window as any).saoDebug || {};
+  (window as any).saoDebug.chromeObjectMounted = true;
+  (window as any).saoDebug.environment = process.env.NODE_ENV;
+  (window as any).saoDebug.timestamp = new Date().toISOString();
+  
+  // AGGRESSIVE DEBUG: Force visible feedback
+  React.useEffect(() => {
+    console.error('🚨 FORCE VISIBLE LOG - ChromeObject useEffect running!');
+    console.warn('⚠️ Environment check:', process.env.NODE_ENV);
+    console.info('ℹ️ StartPresentation:', startPresentation);
+    
+    // This should show in Network tab if nothing else works
+    fetch('data:text/plain,ChromeObject-Mounted-' + Date.now()).catch(() => {});
+  }, [startPresentation]);
+  
   // Parent group for rotation (stays at origin)
   const parentGroupRef = useRef<THREE.Group>(null);
   // Child group for visual positioning

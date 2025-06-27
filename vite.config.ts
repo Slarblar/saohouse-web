@@ -8,6 +8,13 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: false,
+        drop_debugger: false
+      }
+    },
     rollupOptions: {
       output: {
         assetFileNames: (assetInfo) => {
@@ -19,5 +26,8 @@ export default defineConfig({
       }
     }
   },
-  assetsInclude: ['**/*.glb', '**/*.gltf']
+  assetsInclude: ['**/*.glb', '**/*.gltf'],
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production')
+  }
 }) 
