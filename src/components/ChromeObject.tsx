@@ -81,18 +81,53 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
   const gltf = useGLTF('/objects/sao-logo.glb');
   const [isModelLoaded, setIsModelLoaded] = useState(false);
   const [isMaterialsReady, setIsMaterialsReady] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   
   // PERFORMANCE: Aggressive preloading for front-loaded performance
   useGLTF.preload('/objects/sao-logo.glb');
   
-  // Error handling for GLTF loading
+  // Enhanced error handling for GLTF loading with production debugging
   useEffect(() => {
     console.log('🔍 GLTF Loading Status:', {
       hasGltf: !!gltf,
       hasScene: !!gltf?.scene,
-      sceneChildren: gltf?.scene?.children?.length || 0
+      sceneChildren: gltf?.scene?.children?.length || 0,
+      environment: process.env.NODE_ENV,
+      userAgent: navigator.userAgent,
+      url: window.location.href
     });
-  }, [gltf]);
+    
+    // Additional error checking for production
+    if (!gltf && !loadError) {
+      console.warn('⚠️ GLTF object is undefined - checking network...');
+      
+      // Test if the GLB file is accessible
+      fetch('/objects/sao-logo.glb')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          console.log('✅ GLB file is accessible via fetch');
+          return response.blob();
+        })
+        .then(blob => {
+          console.log('📦 GLB file blob:', {
+            size: blob.size,
+            type: blob.type
+          });
+        })
+        .catch(error => {
+          console.error('❌ GLB file fetch failed:', error);
+          setLoadError(`Asset loading failed: ${error.message}`);
+        });
+    }
+    
+    // Check for scene loading errors
+    if (gltf && !gltf.scene) {
+      console.error('❌ GLTF loaded but scene is missing');
+      setLoadError('3D model scene is missing');
+    }
+  }, [gltf, loadError]);
   
   // Default material settings - now modular
   const defaultMaterialSettings: MaterialSettings = {
@@ -184,7 +219,7 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
   }, [blurAnimation.isAnimating, activeMaterialSettings]);
 
   // UNIFIED VISIBILITY: Single source of truth - no competing states
-  const shouldRender = isModelLoaded; // Render when model is loaded, presentation controls opacity
+  const shouldRender = isModelLoaded && !loadError; // Don't render if there's an error
 
   // Apply materials and handle responsive settings - modular material system with direct blur
   const materialRef = useRef<THREE.MeshPhysicalMaterial | null>(null);
@@ -633,7 +668,22 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
     };
   }, [gltf]); // Keep gltf dependency for proper cleanup
 
-  // Don't render anything until we should be visible - prevents random popping
+  // Fallback error component
+  if (loadError) {
+    return (
+      <mesh position={[0, 0, 0]}>
+        <boxGeometry args={[2, 1, 0.1]} />
+        <meshStandardMaterial 
+          color="#ff4444" 
+          transparent 
+          opacity={0.8}
+        />
+        {/* Add text if possible, or just a simple geometric fallback */}
+      </mesh>
+    );
+  }
+
+  // Don't render anything if model isn't loaded yet
   if (!shouldRender) {
     return null;
   }

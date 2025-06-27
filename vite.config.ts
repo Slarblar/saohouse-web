@@ -8,5 +8,16 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+    rollupOptions: {
+      output: {
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name?.endsWith('.glb')) {
+            return 'objects/[name][extname]'
+          }
+          return 'assets/[name]-[hash][extname]'
+        }
+      }
+    }
   },
+  assetsInclude: ['**/*.glb', '**/*.gltf']
 }) 
