@@ -6,7 +6,11 @@ import {
   Bloom,
   ToneMapping,
   Vignette,
-  ChromaticAberration
+  ChromaticAberration,
+  BrightnessContrast,
+  Noise,
+  N8AO,
+  FXAA
 } from '@react-three/postprocessing';
 import { Effect, BlendFunction } from 'postprocessing';
 import * as THREE from 'three';
@@ -608,11 +612,19 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
   useEffect(() => {
     const loadSettings = async () => {
       try {
+        console.log('🔍 Hero3DLens: Starting settings discovery...');
         const loadedSettings = await discoverAndLoadSettings();
+        console.log('✅ Hero3DLens: Settings loaded successfully:', {
+          toneMapping: loadedSettings.toneMapping,
+          bloom: loadedSettings.bloom,
+          chromaticAberration: loadedSettings.chromaticAberration,
+          lensDistortion: loadedSettings.lensDistortion,
+          filmGrain: loadedSettings.filmGrain
+        });
         setSettings(loadedSettings);
         setIsSettingsLoaded(true);
       } catch (error) {
-        console.error('Failed to load settings:', error);
+        console.error('❌ Failed to load settings:', error);
         setIsSettingsLoaded(true);
       }
     };
@@ -633,8 +645,8 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
 
   // Handle model loading completion
   const handleModelLoaded = (loaded: boolean) => {
-    // PERFORMANCE: Logging disabled for optimal FPS
-    // console.log('📦 Hero3DLens: Model loaded:', loaded);
+    // PERFORMANCE: Model loading debug enabled temporarily
+    console.log('📦 Hero3DLens: Model loaded:', loaded);
     if (loaded && !isModelLoaded) {
       setIsModelLoaded(true);
     }
@@ -675,6 +687,17 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
   const handleSettingsLoad = (newSettings: PostProcessingSettings) => {
     setSettings(newSettings);
   };
+
+  // Debug: Log settings when they change
+  useEffect(() => {
+    console.log('🎨 Post-processing settings updated:', {
+      exposure: settings.toneMapping.exposure,
+      bloomIntensity: settings.bloom.intensity,
+      chromaticAberration: settings.chromaticAberration.offset,
+      lensDistortionCA: settings.lensDistortion.chromaticAberration,
+      filmGrainOpacity: settings.filmGrain.opacity
+    });
+  }, [settings]);
 
   return (
     <div className="hero-3d-container">
@@ -829,6 +852,25 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
               offset={settings.lensDistortion.vignette}
               darkness={0.5}
             />
+
+            <BrightnessContrast
+              brightness={0}
+              contrast={0.1}
+            />
+
+            <Noise
+              opacity={settings.filmGrain.opacity}
+            />
+
+            {/* Use N8AO instead of SSAO as it's more modern and self-contained */}
+            <N8AO
+              aoRadius={settings.ssao.radius}
+              intensity={settings.ssao.intensity}
+              distanceFalloff={settings.ssao.distanceFalloff}
+              denoiseRadius={12}
+            />
+
+            <FXAA />
           </EffectComposer>
         </Suspense>
       </Canvas>
