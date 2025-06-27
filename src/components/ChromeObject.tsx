@@ -73,6 +73,9 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
   // Modular blur-in animation - no hardcoded duration!
   const blurAnimation = useBlurInAnimation(); // Use default from hook
   
+  // AGGRESSIVE PREVENTION: Use ref to prevent multiple starts
+  const hasStartedPresentationRef = useRef(false);
+  
   // Get responsive configuration with loading callback
   const { scale, position: visualOffset } = useResponsive3D(
     undefined,
@@ -233,15 +236,16 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
 
   // Handle presentation start - simplified, no competing states
   useEffect(() => {
-    if (startPresentation && isModelLoaded && isMaterialsReady) {
-      console.log('🎭 Starting presentation - all systems ready');
+    if (startPresentation && isModelLoaded && isMaterialsReady && !hasStartedPresentationRef.current) {
+      console.log('🎭 Starting presentation - all systems ready (REF GUARD)');
+      hasStartedPresentationRef.current = true;
       
       // Start blur-in immediately when everything is ready
       requestAnimationFrame(() => {
         blurAnimation.start();
       });
     }
-  }, [startPresentation, isModelLoaded, isMaterialsReady, blurAnimation]);
+  }, [startPresentation, isModelLoaded, isMaterialsReady]);
 
   // Set final material properties after animations are done
   useEffect(() => {
