@@ -12,8 +12,210 @@ import {
 import { gsap } from 'gsap';
 import * as THREE from 'three';
 import ChromeObject from './ChromeObject';
-import settingsData from '../settings.json';
+import type { PostProcessingSettings } from './ToneMappingControls';
 import './Hero3D.css';
+
+const SETTINGS_STORAGE_KEY = 'saohouse-settings';
+
+// Default settings - same as Hero3DLens
+const defaultSettings: PostProcessingSettings = {
+  toneMapping: {
+    mode: 6,
+    exposure: 1.6,
+    whitePoint: 21,
+    middleGrey: 0.35,
+    adaptation: 1.2
+  },
+  bloom: {
+    intensity: 0.1,
+    luminanceThreshold: 0.6,
+    luminanceSmoothing: 0,
+    mipmapBlur: false,
+    opacity: 0.15
+  },
+  chromaticAberration: {
+    enabled: false,
+    offset: [0.015, 0.008],
+    redOffset: [0.013, 0],
+    greenOffset: [0, 0],
+    blueOffset: [0, 0],
+    radialModulation: false,
+    modulationOffset: 0,
+    blur: 0,
+    intensity: 1,
+    radialIntensity: 1
+  },
+  filmGrain: {
+    intensity: 0.5,
+    opacity: 0.02
+  },
+  ssao: {
+    intensity: 0.75,
+    radius: 0.55,
+    bias: 0.55,
+    samples: 28,
+    rings: 5,
+    distanceThreshold: 0.85,
+    distanceFalloff: 0.8
+  },
+  blur: {
+    enabled: false,
+    intensity: 0.1,
+    kernelSize: 3,
+    iterations: 1
+  },
+  depthOfField: {
+    enabled: false,
+    focusDistance: 4,
+    focalLength: 29,
+    bokehScale: 1.8
+  },
+  lensDistortion: {
+    enabled: true,
+    barrelDistortion: 0,
+    chromaticAberration: 0.0167,
+    vignette: 0.65,
+    center: [0.5, 0.5]
+  },
+  motionBlur: {
+    intensity: 1,
+    velocityScale: 1,
+    samples: 8,
+    enabled: false
+  },
+  hdri: {
+    enabled: true,
+    url: "studio",
+    intensity: 2.2,
+    rotation: 1.9,
+    background: false
+  },
+  godRays: {
+    enabled: true,
+    density: 0.65,
+    decay: 0.77,
+    weight: 0.47,
+    exposure: 0.67,
+    intensity: 1
+  },
+  material: {
+    roughness: 0.176,
+    metalness: 1,
+    reflectivity: 0.87,
+    envMapIntensity: 2.4,
+    clearcoat: 0.9,
+    clearcoatRoughness: 0.39,
+    ior: 2.13,
+    color: "#7a7a7a",
+    toneMapped: true
+  }
+};
+
+// Settings discovery system - same as Hero3DLens
+const discoverAndLoadSettings = async (): Promise<PostProcessingSettings> => {
+  try {
+    const generateFilePatterns = (): string[] => {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const yDay = String(yesterday.getDate()).padStart(2, '0');
+      const yMonth = String(yesterday.getMonth() + 1).padStart(2, '0');
+      
+      return [
+        // TODAY's patterns (highest priority)
+        `saohouse-settings-${year}-${month}-${day} (3).json`,
+        `saohouse-settings-${year}-${month}-${day} (2).json`, 
+        `saohouse-settings-${year}-${month}-${day} (1).json`,
+        `saohouse-settings-${year}-${month}-${day}.json`,
+        
+        // YESTERDAY's patterns (second priority)
+        `saohouse-settings-${year}-${yMonth}-${yDay} (3).json`,
+        `saohouse-settings-${year}-${yMonth}-${yDay} (2).json`,
+        `saohouse-settings-${year}-${yMonth}-${yDay} (1).json`,
+        `saohouse-settings-${year}-${yMonth}-${yDay}.json`,
+        
+        // Recent weeks (third priority)
+        'saohouse-settings-2025-06-27 (1).json',
+        'saohouse-settings-2025-06-26 (1).json',
+        'saohouse-settings-2025-06-25 (1).json',
+        'saohouse-settings-2025-06-24 (2).json',
+        'saohouse-settings-2025-06-24 (1).json',
+        'saohouse-settings-2025-06-23 (1).json',
+        
+        // Generic/fallback patterns (lowest priority)
+        'latest.json',
+        'current.json', 
+        'settings.json',
+        'saohouse-settings.json',
+        'latest-settings.json',
+        'current-settings.json',
+        'production.json',
+        'config.json'
+      ];
+    };
+
+    const potentialFiles = generateFilePatterns();
+    console.log('🔍 Hero3D: Auto-discovering settings in /public/importsettings...');
+    console.log(`📁 Hero3D: Checking ${potentialFiles.length} potential file patterns...`);
+    
+    for (const filename of potentialFiles) {
+      try {
+        const response = await fetch(`/importsettings/${filename}`);
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data && (data.settings || data.toneMapping || data.material)) {
+            console.log(`✅ Hero3D: Found and loaded settings: ${filename}`);
+            console.log(`📊 Hero3D: Settings timestamp: ${data.timestamp || 'Unknown'}`);
+            
+            const importedSettings = data.settings || data;
+            
+            return {
+              ...defaultSettings,
+              ...importedSettings,
+              toneMapping: { ...defaultSettings.toneMapping, ...importedSettings.toneMapping },
+              bloom: { ...defaultSettings.bloom, ...importedSettings.bloom },
+              chromaticAberration: { ...defaultSettings.chromaticAberration, ...importedSettings.chromaticAberration },
+              filmGrain: { ...defaultSettings.filmGrain, ...importedSettings.filmGrain },
+              ssao: { ...defaultSettings.ssao, ...importedSettings.ssao },
+              blur: { ...defaultSettings.blur, ...importedSettings.blur },
+              depthOfField: { ...defaultSettings.depthOfField, ...importedSettings.depthOfField },
+              lensDistortion: { ...defaultSettings.lensDistortion, ...importedSettings.lensDistortion },
+              motionBlur: { ...defaultSettings.motionBlur, ...importedSettings.motionBlur },
+              hdri: { ...defaultSettings.hdri, ...importedSettings.hdri },
+              godRays: { ...defaultSettings.godRays, ...importedSettings.godRays },
+              material: { ...defaultSettings.material, ...importedSettings.material },
+            };
+          }
+        }
+      } catch (fileError) {
+        continue;
+      }
+    }
+    
+    throw new Error('No valid settings files found in /public/importsettings/');
+    
+  } catch (error) {
+    console.warn('⚠️ Hero3D: Failed to auto-discover settings, falling back to localStorage or defaults:', error);
+    
+    try {
+      const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        console.log('📱 Hero3D: Loaded settings from localStorage fallback');
+        return { ...defaultSettings, ...parsed };
+      }
+      console.log('🔧 Hero3D: Using default settings (no saved settings found)');
+      return defaultSettings;
+    } catch (localStorageError) {
+      console.warn('❌ Hero3D: Failed to load settings from localStorage:', localStorageError);
+      console.log('🔧 Hero3D: Using default settings (localStorage failed)');
+      return defaultSettings;
+    }
+  }
+};
 
 // Device detection hook
 const useDeviceDetection = () => {
@@ -255,15 +457,42 @@ const ResponsiveCameraController = ({ deviceInfo }: { deviceInfo: any }) => {
 const Hero3D: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
+  const [settings, setSettings] = useState<PostProcessingSettings>(defaultSettings);
+  const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
   const deviceInfo = useDeviceDetection();
   
+  // Load settings with auto-discovery on component mount
+  useEffect(() => {
+    console.log('🔥 Hero3D: Starting settings discovery...');
+    
+    const loadSettings = async () => {
+      try {
+        const loadedSettings = await discoverAndLoadSettings();
+        console.log('✅ Hero3D: Settings loaded successfully:', {
+          toneMapping: loadedSettings.toneMapping,
+          bloom: loadedSettings.bloom,
+          lensDistortion: loadedSettings.lensDistortion,
+          material: loadedSettings.material
+        });
+        setSettings(loadedSettings);
+        setIsSettingsLoaded(true);
+      } catch (error) {
+        console.error('❌ Hero3D: Failed to load settings:', error);
+        setIsSettingsLoaded(true);
+      }
+    };
+
+    loadSettings();
+  }, []);
+
   const {
     toneMapping,
     bloom,
     chromaticAberration,
     lensDistortion,
-    hdri
-  } = settingsData.settings;
+    hdri,
+    material
+  } = settings;
 
   useEffect(() => {
 
@@ -346,7 +575,7 @@ const Hero3D: React.FC = () => {
             />
             
             <Suspense fallback={null}>
-              <ChromeObject />
+              <ChromeObject materialSettings={material} />
               <ResponsiveCameraController deviceInfo={deviceInfo} />
 
               {/* Responsive post-processing effects */}

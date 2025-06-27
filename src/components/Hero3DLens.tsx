@@ -25,7 +25,7 @@ import './Hero3D.css';
 const SETTINGS_STORAGE_KEY = 'saohouse-settings';
 
 // Set to true when you need to adjust settings
-const SHOW_CONTROLS = true;
+const SHOW_CONTROLS = false;
 
 const defaultSettings: PostProcessingSettings = {
   toneMapping: {
