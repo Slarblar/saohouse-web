@@ -61,11 +61,11 @@ const calculateViewportInfo = (): ViewportInfo => {
 const defaultSettings: ResponsiveSettings = {
   mobile: {
     portrait: { scale: 0.025344, position: [0.045, 0.15, 0] }, // iPhone responsive: increased 20% for better visibility
-    landscape: { scale: 0.084, position: [0.185, 0.7, 0] } // Moved logo higher for better spacing (0.52 → 0.7)
+    landscape: { scale: 0.063, position: [0.185, 0.65, 0] } // Reduced 25% and repositioned for Apple UI compatibility
   },
   tablet: {
     portrait: { scale: 0.025344, position: [0.045, 0.15, 0] }, // iPhone responsive: increased 20% for better visibility
-    landscape: { scale: 0.084, position: [0.185, 0.7, 0] } // Moved logo higher for better spacing (0.52 → 0.7)
+    landscape: { scale: 0.063, position: [0.185, 0.65, 0] } // Reduced 25% and repositioned for Apple UI compatibility
   },
   desktop: {
     portrait: { scale: 0.0264, position: [0.0, 0.15, 0] }, // Standardized portrait proportions
@@ -227,20 +227,20 @@ export const useResponsive3D = (
             position: [0.095, 0.15, 0] as [number, number, number] // Precise visual center (0.12 - 0.025 = 0.095)
         };
     } else if (isPixel7Landscape && deviceInfo.orientation === 'landscape') {
-        // Increase by 200% from the current detected scale (300% of original = 3x)
-        const currentScale = deviceInfo.type === 'mobile' ? 0.07728 : 0.028;
-        const tripleScale = currentScale * 3.0; // 200% increase (triple)
+        // Use new reduced landscape scale with 200% increase
+        const newLandscapeScale = 0.063; // New 25% reduced landscape scale
+        const tripleScale = newLandscapeScale * 3.0; // 200% increase (triple)
         newConfig = {
             ...newConfig,
             scale: tripleScale,
-            position: deviceInfo.type === 'mobile' ? [0.385, 1.0, 0] : [0.185, 0.7, 0] as [number, number, number] // Adjusted for new landscape positioning
+            position: deviceInfo.type === 'mobile' ? [0.385, 0.9, 0] : [0.185, 0.65, 0] as [number, number, number] // Adjusted for new landscape positioning
         };
     } else if (isGalaxyZFoldLandscape) {
-        // Galaxy Z Fold landscape - move logo up slightly
+        // Galaxy Z Fold landscape - use new reduced scale
         newConfig = {
             ...newConfig,
-            scale: 0.084, // Use optimized landscape scale
-            position: [0.185, 0.8, 0] as [number, number, number] // Adjusted for new landscape positioning (was 0.65, now 0.8)
+            scale: 0.063, // Use new 25% reduced landscape scale
+            position: [0.185, 0.65, 0] as [number, number, number] // Use new landscape positioning
         };
     }
 
@@ -253,11 +253,11 @@ export const useResponsive3D = (
                                (currentViewport.width === 820 && currentViewport.height === 1180));
     
     if (isIPadMiniLandscape || isIPadAirLandscape) {
-        const reducedScale = 0.084 * 0.65; // 35% reduction from optimized landscape scale
+        const reducedScale = 0.063 * 0.65; // 35% reduction from new 25% reduced landscape scale
         newConfig = {
             ...newConfig,
             scale: reducedScale,
-            position: [0.185, 0.7, 0] as [number, number, number] // Updated to new landscape position
+            position: [0.185, 0.65, 0] as [number, number, number] // Use new landscape position
         };
     }
 

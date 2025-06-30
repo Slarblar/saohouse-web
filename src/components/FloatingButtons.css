@@ -736,7 +736,7 @@
 /* Mobile Landscape Optimization */
 @media screen and (max-width: 768px) and (orientation: landscape) and (max-height: 600px) {
   .floating-buttons {
-    bottom: 3.5rem;
+    bottom: 1.5rem;
     gap: 0.4rem;
     padding: 0.4rem;
   }
@@ -799,7 +799,7 @@
 /* Tablet Landscape Optimization */
 @media screen and (min-width: 768px) and (orientation: landscape) and (max-height: 800px) {
   .floating-buttons {
-    bottom: 4.5rem;
+    bottom: 2.0rem;
     gap: 0.6rem;
   }
 
@@ -842,6 +842,19 @@
   .comms-btn svg {
     width: 16px;
     height: 16px;
+  }
+}
+
+/* Additional Apple Device Specific Optimization for Landscape */
+@media screen and (max-width: 844px) and (orientation: landscape) {
+  .floating-buttons {
+    bottom: 1.2rem; /* Extra low for iPhone Pro Max landscape */
+  }
+}
+
+@media screen and (max-width: 736px) and (orientation: landscape) {
+  .floating-buttons {
+    bottom: 1.0rem; /* Extra space for standard iPhone landscape */
   }
 }
 
