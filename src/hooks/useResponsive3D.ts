@@ -62,7 +62,7 @@ const calculateViewportInfo = (): ViewportInfo => {
 const defaultSettings: ResponsiveSettings = {
   mobile: {
     portrait: { scale: 0.025344, position: [0.045, 0.15, 0] }, // iPhone responsive: increased 20% for better visibility
-    landscape: { scale: 0.07245, position: [0.185, 0.15, 0] } // Moved down another 0.25 units for better mobile landscape centering
+    landscape: { scale: 0.07245, position: [0.185, 0.45, 0] } // Raised significantly for better mobile landscape centering (+0.30 higher)
   },
   tablet: {
     portrait: { scale: 0.025344, position: [0.045, 0.15, 0] }, // iPhone responsive: increased 20% for better visibility
@@ -209,6 +209,12 @@ export const useResponsive3D = (
     
     let newConfig = { ...baseConfig };
 
+    // iPhone 13 Pro Max specific adjustments (430x932 portrait, 932x430 landscape)
+    const isiPhone13ProMaxPortrait = ((currentViewport.width === 430) && 
+                                      (currentViewport.height === 932));
+    const isiPhone13ProMaxLandscape = ((currentViewport.width === 932) && 
+                                       (currentViewport.height === 430));
+    
     // Pixel 7 specific adjustments
     const isPixel7Portrait = ((currentViewport.width === 412 || currentViewport.width === 411) && 
                               (currentViewport.height === 915 || currentViewport.height === 891));
@@ -226,7 +232,22 @@ export const useResponsive3D = (
     const isGalaxyUltraLandscape = ((currentViewport.width === 915 || currentViewport.width === 869) && 
                                     (currentViewport.height === 412 || currentViewport.height === 384));
     
-    if (isPixel7Portrait && deviceInfo.orientation === 'portrait') {
+    // iPhone 13 Pro Max specific positioning
+    if (isiPhone13ProMaxLandscape && deviceInfo.orientation === 'landscape') {
+        // iPhone 13 Pro Max landscape - perfect centering for Safari
+        newConfig = {
+            ...newConfig,
+            scale: 0.07245, // Same scale as mobile landscape
+            position: [0.185, 0.52, 0] as [number, number, number] // Even higher for Safari landscape centering
+        };
+    } else if (isiPhone13ProMaxPortrait && deviceInfo.orientation === 'portrait') {
+        // iPhone 13 Pro Max portrait
+        newConfig = {
+            ...newConfig,
+            scale: 0.025344,
+            position: [0.045, 0.15, 0] as [number, number, number] // Standard mobile portrait position
+        };
+    } else if (isPixel7Portrait && deviceInfo.orientation === 'portrait') {
         // Reduce by 18% from the updated iPhone responsive portrait scale (0.025344)
         const reducedScale = 0.025344 * 0.82; // 18% reduction
         newConfig = {
