@@ -51,7 +51,6 @@ export const useSafariViewportFix = () => {
     if (isMobileSafari && isLandscape) {
       // Safari mobile landscape specific calculations
       const screenHeight = window.screen.height;
-      const screenWidth = window.screen.width;
       
       // In landscape, Safari's UI takes up space differently
       // The visual viewport is more accurate than innerHeight
