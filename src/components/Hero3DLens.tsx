@@ -172,7 +172,7 @@ const AnimatedEnvironment: React.FC<{
     if (enabled && !hasError) {
       try {
         const time = state.clock.getElapsedTime();
-        const newRotation = baseRotation + (time * 0.08); // Slower, more elegant rotation
+        const newRotation = baseRotation + (time * 0.16); // Double speed for more noticeable rotation
         
         // Update array in place to maintain reference stability
         rotationArray.current[1] = newRotation;
