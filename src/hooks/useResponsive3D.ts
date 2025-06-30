@@ -61,15 +61,15 @@ const calculateViewportInfo = (): ViewportInfo => {
 const defaultSettings: ResponsiveSettings = {
   mobile: {
     portrait: { scale: 0.025344, position: [0.045, 0.15, 0] }, // iPhone responsive: increased 20% for better visibility
-    landscape: { scale: 0.063, position: [0.185, 0.65, 0] } // Reduced 25% and repositioned for Apple UI compatibility
+    landscape: { scale: 0.07245, position: [0.185, 0.15, 0] } // Moved down another 0.25 units for better mobile landscape centering
   },
   tablet: {
     portrait: { scale: 0.025344, position: [0.045, 0.15, 0] }, // iPhone responsive: increased 20% for better visibility
-    landscape: { scale: 0.063, position: [0.185, 0.65, 0] } // Reduced 25% and repositioned for Apple UI compatibility
+    landscape: { scale: 0.07245, position: [0.185, 0.30, 0] } // Adjusted for bottom button positioning on tablets
   },
   desktop: {
     portrait: { scale: 0.0264, position: [0.0, 0.15, 0] }, // Standardized portrait proportions
-    landscape: { scale: 0.048, position: [0.10, 0.2, 0] } // Original desktop landscape settings
+    landscape: { scale: 0.0552, position: [0.10, 0.2, 0] } // Increased 15% for better visibility with left-side buttons
   }
 };
 
@@ -218,6 +218,12 @@ export const useResponsive3D = (
                                   ((currentViewport.width === 882 && currentViewport.height === 344) ||
                                    (currentViewport.width === 344 && currentViewport.height === 882));
     
+    // Galaxy Ultra specific adjustments (S20 Ultra, S21 Ultra, etc.)
+    const isGalaxyUltraPortrait = ((currentViewport.width === 412 || currentViewport.width === 384) && 
+                                   (currentViewport.height === 915 || currentViewport.height === 869));
+    const isGalaxyUltraLandscape = ((currentViewport.width === 915 || currentViewport.width === 869) && 
+                                    (currentViewport.height === 412 || currentViewport.height === 384));
+    
     if (isPixel7Portrait && deviceInfo.orientation === 'portrait') {
         // Reduce by 18% from the updated iPhone responsive portrait scale (0.025344)
         const reducedScale = 0.025344 * 0.82; // 18% reduction
@@ -227,20 +233,36 @@ export const useResponsive3D = (
             position: [0.095, 0.15, 0] as [number, number, number] // Precise visual center (0.12 - 0.025 = 0.095)
         };
     } else if (isPixel7Landscape && deviceInfo.orientation === 'landscape') {
-        // Use new reduced landscape scale with 200% increase
-        const newLandscapeScale = 0.063; // New 25% reduced landscape scale
+        // Use new 15% increased landscape scale with 200% increase
+        const newLandscapeScale = 0.07245; // New 15% increased landscape scale
         const tripleScale = newLandscapeScale * 3.0; // 200% increase (triple)
         newConfig = {
             ...newConfig,
             scale: tripleScale,
-            position: deviceInfo.type === 'mobile' ? [0.385, 0.9, 0] : [0.185, 0.65, 0] as [number, number, number] // Adjusted for new landscape positioning
+            position: deviceInfo.type === 'mobile' ? [0.385, 0.40, 0] : [0.185, 0.15, 0] as [number, number, number] // Moved down another 0.25 units for better mobile landscape centering
         };
     } else if (isGalaxyZFoldLandscape) {
-        // Galaxy Z Fold landscape - use new reduced scale
+        // Galaxy Z Fold landscape - use new 15% increased scale
         newConfig = {
             ...newConfig,
-            scale: 0.063, // Use new 25% reduced landscape scale
-            position: [0.185, 0.65, 0] as [number, number, number] // Use new landscape positioning
+            scale: 0.07245, // Use new 15% increased landscape scale
+            position: [0.185, 0.15, 0] as [number, number, number] // Moved down another 0.25 units for better mobile landscape centering
+        };
+    } else if (isGalaxyUltraPortrait && deviceInfo.orientation === 'portrait') {
+        // Galaxy Ultra portrait - reduce by 60% (140% smaller) for proportional sizing
+        const reducedScale = 0.025344 * 0.40; // 60% reduction (140% smaller)
+        newConfig = {
+            ...newConfig,
+            scale: reducedScale,
+            position: [0.045, 0.15, 0] as [number, number, number] // Use standard mobile portrait position
+        };
+    } else if (isGalaxyUltraLandscape && deviceInfo.orientation === 'landscape') {
+        // Galaxy Ultra landscape - reduce by 60% (140% smaller) for proportional sizing
+        const reducedScale = 0.07245 * 0.40; // 60% reduction (140% smaller)
+        newConfig = {
+            ...newConfig,
+            scale: reducedScale,
+            position: [0.185, 0.15, 0] as [number, number, number] // Use standard mobile landscape position
         };
     }
 
@@ -253,11 +275,11 @@ export const useResponsive3D = (
                                (currentViewport.width === 820 && currentViewport.height === 1180));
     
     if (isIPadMiniLandscape || isIPadAirLandscape) {
-        const reducedScale = 0.063 * 0.65; // 35% reduction from new 25% reduced landscape scale
+        const reducedScale = 0.07245 * 0.65; // 35% reduction from new 15% increased landscape scale
         newConfig = {
             ...newConfig,
             scale: reducedScale,
-            position: [0.185, 0.65, 0] as [number, number, number] // Use new landscape position
+            position: [0.185, 0.30, 0] as [number, number, number] // Adjusted for bottom button positioning on tablets
         };
     }
 
