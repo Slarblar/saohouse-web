@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// TypeScript interfaces
+// TypeScript interfaces for MailerLite API
 interface SubscribeRequestBody {
   email: string;
 }
