@@ -60,12 +60,12 @@ const calculateViewportInfo = (): ViewportInfo => {
 // These positions account for the model's actual geometry center, not coordinate center
 const defaultSettings: ResponsiveSettings = {
   mobile: {
-    portrait: { scale: 0.0264, position: [0.0, 0.15, 0] }, // Optimized portrait proportions (iPhone 14 Pro Max tested)
-    landscape: { scale: 0.084, position: [0.185, 0.52, 0] } // Optimized landscape proportions (Pixel 7 tested)
+    portrait: { scale: 0.02112, position: [0.045, 0.15, 0] }, // iPhone responsive: 20% smaller, precise visual center (moved 0.025 left)
+    landscape: { scale: 0.084, position: [0.185, 0.7, 0] } // Moved logo higher for better spacing (0.52 → 0.7)
   },
   tablet: {
-    portrait: { scale: 0.0264, position: [0.0, 0.15, 0] }, // Standardized portrait proportions 
-    landscape: { scale: 0.084, position: [0.185, 0.52, 0] } // Optimized landscape proportions (Pixel 7 tested)
+    portrait: { scale: 0.02112, position: [0.045, 0.15, 0] }, // iPhone responsive: 20% smaller, precise visual center (moved 0.025 left)
+    landscape: { scale: 0.084, position: [0.185, 0.7, 0] } // Moved logo higher for better spacing (0.52 → 0.7)
   },
   desktop: {
     portrait: { scale: 0.0264, position: [0.0, 0.15, 0] }, // Standardized portrait proportions
@@ -219,12 +219,12 @@ export const useResponsive3D = (
                                    (currentViewport.width === 344 && currentViewport.height === 882));
     
     if (isPixel7Portrait && deviceInfo.orientation === 'portrait') {
-        // Reduce by 18% from the standardized portrait scale (0.0264)
-        const reducedScale = 0.0264 * 0.82; // 18% reduction
+        // Reduce by 18% from the iPhone responsive portrait scale (0.02112)
+        const reducedScale = 0.02112 * 0.82; // 18% reduction
         newConfig = {
             ...newConfig,
             scale: reducedScale,
-            position: [0.05, 0.15, 0] as [number, number, number] // Centered with slight right adjustment for Pixel 7
+            position: [0.095, 0.15, 0] as [number, number, number] // Precise visual center (0.12 - 0.025 = 0.095)
         };
     } else if (isPixel7Landscape && deviceInfo.orientation === 'landscape') {
         // Increase by 200% from the current detected scale (300% of original = 3x)
@@ -233,14 +233,14 @@ export const useResponsive3D = (
         newConfig = {
             ...newConfig,
             scale: tripleScale,
-            position: deviceInfo.type === 'mobile' ? [0.385, 0.85, 0] : [0.185, 0.52, 0] as [number, number, number] // Moved 0.135 units right, 0.32 units up total
+            position: deviceInfo.type === 'mobile' ? [0.385, 1.0, 0] : [0.185, 0.7, 0] as [number, number, number] // Adjusted for new landscape positioning
         };
     } else if (isGalaxyZFoldLandscape) {
         // Galaxy Z Fold landscape - move logo up slightly
         newConfig = {
             ...newConfig,
             scale: 0.084, // Use optimized landscape scale
-            position: [0.185, 0.65, 0] as [number, number, number] // Moved up from 0.52 to 0.65
+            position: [0.185, 0.8, 0] as [number, number, number] // Adjusted for new landscape positioning (was 0.65, now 0.8)
         };
     }
 
@@ -257,7 +257,7 @@ export const useResponsive3D = (
         newConfig = {
             ...newConfig,
             scale: reducedScale,
-            position: [0.185, 0.52, 0] as [number, number, number] // Keep optimized position
+            position: [0.185, 0.7, 0] as [number, number, number] // Updated to new landscape position
         };
     }
 
@@ -272,27 +272,27 @@ export const useResponsive3D = (
                               (currentViewport.width === 1180 && currentViewport.height === 820));
     
     if (isIPadMiniPortrait) {
-        const adjustedScale = 0.0264 * 1.2529688; // 25.3% increase (125.3% of original) - was 7.2% reduction, now increased by additional 35%
+        const adjustedScale = 0.02112 * 1.2529688; // 25.3% increase from iPhone responsive scale
         newConfig = {
             ...newConfig,
             scale: adjustedScale,
-            position: [0.0, 0.15, 0] as [number, number, number] // Keep standardized position
+            position: [0.045, 0.15, 0] as [number, number, number] // Updated to precise visual center position
         };
     } else if (isIPadAirPortrait) {
-        const increasedScale = 0.0264 * 1.70; // 70% increase (170% of original) - was 35%, now additional 35%
+        const increasedScale = 0.02112 * 1.70; // 70% increase from iPhone responsive scale
         newConfig = {
             ...newConfig,
             scale: increasedScale,
-            position: [0.0, 0.15, 0] as [number, number, number] // Keep standardized position
+            position: [0.045, 0.15, 0] as [number, number, number] // Updated to precise visual center position
         };
     }
     // Other iPad specific adjustments (only for portrait - let landscape use optimized settings)
     else if (deviceInfo.isIPad && deviceInfo.type === 'tablet' && deviceInfo.orientation === 'portrait') {
-        const increasedScale = 0.0264 * 1.62; // 62% increase for iPad Pro portrait (was 20%, now increased by 35%)
+        const increasedScale = 0.02112 * 1.62; // 62% increase from iPhone responsive scale
         newConfig = {
             ...newConfig,
             scale: increasedScale,
-            position: [0.2575, 0.15, 0] as [number, number, number] // Moved additional 0.125 units to the right (total 0.2575)
+            position: [0.3025, 0.15, 0] as [number, number, number] // Precise adjustment (0.3275 - 0.025 = 0.3025)
         };
     }
 

@@ -13,6 +13,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
     phone: ''
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isClosing, setIsClosing] = useState(false)
   
   // Use our new subscription hook
   const { isLoading: isSubmitting, isSuccess, error: subscriptionError, subscribe } = useSubscription()
@@ -20,12 +21,22 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
   // Apply global modal blur effect
   React.useEffect(() => {
     document.body.classList.add('modal-open');
+    setIsClosing(false); // Reset closing state when opening
     
     // Cleanup on unmount
     return () => {
       document.body.classList.remove('modal-open');
     };
   }, []);
+
+  // Auto close modal after successful subscription
+  React.useEffect(() => {
+    if (isSuccess) {
+      setTimeout(() => {
+        handleClose();
+      }, 2500); // Slightly reduced to account for fade-out animation
+    }
+  }, [isSuccess]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -60,13 +71,23 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
     }
   }
 
+  const handleClose = () => {
+    setIsClosing(true)
+    
+    // Wait for fade-out animation to complete before calling onClose
+    setTimeout(() => {
+      onClose()
+      setIsClosing(false)
+    }, 300) // Match the fade-out animation duration
+  }
+
   if (isSuccess) {
     return (
-      <div className="signup-overlay" onClick={onClose}>
-        <div className="signup-modal" onClick={e => e.stopPropagation()}>
+      <div className={`signup-overlay ${isClosing ? 'closing' : ''}`} onClick={handleClose}>
+        <div className={`signup-modal ${isClosing ? 'closing' : ''}`} onClick={e => e.stopPropagation()}>
           <button 
             className="close-button" 
-            onClick={onClose}
+            onClick={handleClose}
             type="button"
             aria-label="Close modal"
             tabIndex={0}
@@ -90,11 +111,11 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose }) => {
   }
 
   return (
-    <div className="signup-overlay" onClick={onClose}>
-      <div className="signup-modal" onClick={e => e.stopPropagation()}>
+    <div className={`signup-overlay ${isClosing ? 'closing' : ''}`} onClick={handleClose}>
+      <div className={`signup-modal ${isClosing ? 'closing' : ''}`} onClick={e => e.stopPropagation()}>
         <button 
           className="close-button" 
-          onClick={onClose}
+          onClick={handleClose}
           type="button"
           aria-label="Close modal"
           tabIndex={0}

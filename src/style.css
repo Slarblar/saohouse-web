@@ -102,6 +102,11 @@ body.modal-open > #root {
   -webkit-overflow-scrolling: touch;
 }
 
+.modal-overlay.closing,
+.signup-overlay.closing {
+  animation: modalFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
 /* Universal Modal Content Styles */
 .modal-content,
 .signup-modal {
@@ -125,9 +130,19 @@ body.modal-open > #root {
   -webkit-overflow-scrolling: touch;
 }
 
+.modal-content.closing,
+.signup-modal.closing {
+  animation: modalSlideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
 @keyframes modalFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+@keyframes modalFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 @keyframes modalSlideUp {
@@ -138,6 +153,17 @@ body.modal-open > #root {
   to { 
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes modalSlideDown {
+  from { 
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to { 
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
   }
 }
 
@@ -275,6 +301,13 @@ body.modal-open > #root {
   
   .modal-overlay,
   .signup-overlay {
+    animation: none;
+  }
+  
+  .modal-content.closing,
+  .signup-modal.closing,
+  .modal-overlay.closing,
+  .signup-overlay.closing {
     animation: none;
   }
   

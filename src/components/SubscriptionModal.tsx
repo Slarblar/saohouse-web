@@ -10,12 +10,14 @@ interface SubscriptionModalProps {
 
 const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose }) => {
   const [email, setEmail] = useState('');
+  const [isClosing, setIsClosing] = useState(false);
   const { isLoading, isSuccess, error, subscribe, reset, successMessage } = useSubscription();
 
   // Apply global modal blur effect
   useEffect(() => {
     if (isOpen) {
       document.body.classList.add('modal-open');
+      setIsClosing(false); // Reset closing state when opening
     } else {
       document.body.classList.remove('modal-open');
     }
@@ -25,16 +27,14 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose }
     };
   }, [isOpen]);
 
-  // Auto close modal after successful subscription (3 seconds for better UX)
+  // Auto close modal after successful subscription (2.5 seconds + fade-out time)
   useEffect(() => {
     if (isSuccess) {
       setTimeout(() => {
-        onClose();
-        reset();
-        setEmail('');
-      }, 3000); // Changed to 3 seconds
+        handleClose();
+      }, 2500); // Slightly reduced to account for fade-out animation
     }
-  }, [isSuccess, onClose, reset]);
+  }, [isSuccess]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,16 +44,28 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose }
   };
 
   const handleClose = () => {
-    onClose();
-    reset();
-    setEmail('');
+    setIsClosing(true);
+    
+    // Wait for fade-out animation to complete before calling onClose
+    setTimeout(() => {
+      onClose();
+      reset();
+      setEmail('');
+      setIsClosing(false);
+    }, 300); // Match the fade-out animation duration
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="subscription-overlay" onClick={handleClose}>
-      <div className="subscription-modal" onClick={(e) => e.stopPropagation()}>
+    <div 
+      className={`subscription-overlay ${isClosing ? 'closing' : ''}`} 
+      onClick={handleClose}
+    >
+      <div 
+        className={`subscription-modal ${isClosing ? 'closing' : ''}`} 
+        onClick={(e) => e.stopPropagation()}
+      >
         <button 
           className="close-button" 
           onClick={handleClose}

@@ -22,6 +22,10 @@
   -webkit-overflow-scrolling: touch;
 }
 
+.subscription-overlay.closing {
+  animation: fadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
 /* Modal Container */
 .subscription-modal {
   background: rgba(40, 44, 52, 0.95);
@@ -40,6 +44,10 @@
   max-height: 90vh;
   overflow: hidden;
   transform-origin: center;
+}
+
+.subscription-modal.closing {
+  animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 /* Content */
@@ -389,6 +397,11 @@
   to { opacity: 1; }
 }
 
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
 @keyframes slideUp {
   from { 
     opacity: 0;
@@ -397,6 +410,17 @@
   to { 
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideDown {
+  from { 
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to { 
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
   }
 }
 
@@ -545,6 +569,11 @@
   .input-group {
     animation: none;
     transition: none;
+  }
+  
+  .subscription-modal.closing,
+  .subscription-overlay.closing {
+    animation: none;
   }
   
   .send-button:hover,
