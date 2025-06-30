@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useDeviceDetection } from './useDeviceDetection';
+import { useSafariViewportFix, getSafariAdjustedPosition } from './useSafariViewportFix';
 
 interface ResponsiveConfig {
   scale: number;
@@ -79,6 +80,7 @@ export const useResponsive3D = (
   onResponsiveChange?: (isTransitioning: boolean) => void
 ) => {
   const deviceInfo = useDeviceDetection();
+  const safariInfo = useSafariViewportFix();
   const [viewportInfo, setViewportInfo] = useState<ViewportInfo>(calculateViewportInfo);
   
   // Initialize with correct device settings from the start to prevent jumping
@@ -320,7 +322,14 @@ export const useResponsive3D = (
 
     // Keep manual scaling as-is - no automatic aspect ratio adjustments
 
-    setConfig(newConfig);
+    // SAFARI FIX: Apply Safari-specific viewport centering adjustments
+    const safariAdjustedPosition = getSafariAdjustedPosition(newConfig.position, safariInfo);
+    const finalConfig = {
+      ...newConfig,
+      position: safariAdjustedPosition
+    };
+
+    setConfig(finalConfig);
     setViewportInfo(currentViewport);
     setPreviousDeviceInfo(deviceInfo);
     
@@ -342,7 +351,7 @@ export const useResponsive3D = (
     return () => {
       isMounted = false;
     };
-  }, [deviceInfo.type, deviceInfo.orientation, deviceInfo.isIPhone, deviceInfo.isIPad, isInitialized, enableMobileReload, onResponsiveChange]);
+  }, [deviceInfo.type, deviceInfo.orientation, deviceInfo.isIPhone, deviceInfo.isIPad, isInitialized, enableMobileReload, onResponsiveChange, safariInfo.needsCenteringFix, safariInfo.safariUIOffset]);
 
   return {
     deviceType: deviceInfo.type,
