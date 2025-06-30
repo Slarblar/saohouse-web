@@ -421,7 +421,7 @@
 /* Small Mobile (320px - 480px) */
 @media screen and (max-width: 480px) {
   .floating-buttons {
-    bottom: 1.5rem;
+    bottom: 4.5rem;
     gap: 0.5rem;
     padding: 0.5rem;
     /* Reduce animation intensity on mobile */
@@ -498,7 +498,7 @@
 /* Mobile Phones (480px - 640px) */
 @media screen and (min-width: 480px) and (max-width: 640px) {
   .floating-buttons {
-    bottom: 1.75rem;
+    bottom: 4.75rem;
     gap: 0.625rem;
     padding: 0.625rem;
   }
@@ -736,15 +736,21 @@
 /* Mobile Landscape Optimization */
 @media screen and (max-width: 768px) and (orientation: landscape) and (max-height: 600px) {
   .floating-buttons {
-    bottom: 1rem;
-    gap: 0.5rem;
-    padding: 0.5rem;
+    bottom: 3.5rem;
+    gap: 0.4rem;
+    padding: 0.4rem;
   }
 
   .social-icon-btn,
   .comms-btn {
-    width: 40px;
-    height: 40px;
+    width: 34px;
+    height: 34px;
+  }
+
+  .social-icon-btn svg,
+  .comms-btn svg {
+    width: 16px;
+    height: 16px;
   }
 
   .modal-content {
@@ -793,13 +799,49 @@
 /* Tablet Landscape Optimization */
 @media screen and (min-width: 768px) and (orientation: landscape) and (max-height: 800px) {
   .floating-buttons {
-    bottom: 1.5rem;
+    bottom: 4.5rem;
+    gap: 0.6rem;
+  }
+
+  .social-icon-btn,
+  .comms-btn {
+    width: 42px;
+    height: 42px;
+  }
+
+  .social-icon-btn svg,
+  .comms-btn svg {
+    width: 18px;
+    height: 18px;
   }
 
   .modal-content {
     max-height: 90vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Galaxy Z Fold specific positioning - ultra-wide landscape with very short height */
+@media screen and (width: 882px) and (height: 344px) and (orientation: landscape) {
+  .floating-buttons {
+    bottom: 1.25rem; /* Much lower position for Galaxy Z Fold's short height */
+    gap: 0.4rem;
+    padding: 0.3rem;
+  }
+
+  .social-icon-btn,
+  .comms-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  .social-icon-btn svg,
+  .comms-btn svg {
+    width: 16px;
+    height: 16px;
   }
 }
 

@@ -18,107 +18,19 @@ import ChromeObject from './ChromeObject';
 import { ToneMappingMode } from 'postprocessing';
 import ToneMappingControls from './ToneMappingControls';
 import SettingsManager from './SettingsManager';
+import CenteringGrid from './CenteringGrid';
+import GridToggle from './GridToggle';
+import ViewportCenterTest from './ViewportCenterTest';
 // BlurInEffect removed - using material-based blur instead
 import type { PostProcessingSettings } from './ToneMappingControls';
+import { useSettings } from '../utils/settingsManager';
+import { useMobileCameraOptimization } from '../hooks/useMobileCameraOptimization';
+import { MobileCameraController } from './MobileCameraController';
+import { useResponsive3D } from '../hooks/useResponsive3D';
 import './Hero3D.css';
 
-const SETTINGS_STORAGE_KEY = 'saohouse-settings';
-
 // Set to true when you need to adjust settings
-const SHOW_CONTROLS = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost' || window.location.port === '3001'; // ← Auto-detect local environment
-
-const defaultSettings: PostProcessingSettings = {
-  toneMapping: {
-    mode: ToneMappingMode.REINHARD2,
-    exposure: 1.6,
-    whitePoint: 21.0,
-    middleGrey: 0.35,
-    adaptation: 1.2,
-  },
-  bloom: {
-    intensity: 0.8,
-    luminanceThreshold: 0.85,
-    luminanceSmoothing: 0.4,
-    mipmapBlur: false,
-    opacity: 0.8,
-  },
-  chromaticAberration: {
-    enabled: false,
-    offset: [0.0, 0.0],
-    redOffset: [0.0, 0.0],
-    greenOffset: [0.0, 0.0],
-    blueOffset: [0.0, 0.0],
-    radialModulation: false,
-    modulationOffset: 0.0,
-    blur: 0.0,
-    intensity: 1.0,
-    radialIntensity: 1.0,
-  },
-  filmGrain: {
-    intensity: 0.15,
-    opacity: 0.1,
-  },
-  ssao: {
-    intensity: 0.3,
-    radius: 0.8,
-    bias: 0.05,
-    samples: 8,
-    rings: 3,
-    distanceThreshold: 1.0,
-    distanceFalloff: 0.5,
-  },
-  blur: {
-    enabled: false,
-    intensity: 0.5,
-    kernelSize: 35.5,
-    iterations: 1,
-  },
-  depthOfField: {
-    enabled: false,
-    focusDistance: 10.0,
-    focalLength: 50.0,
-    bokehScale: 1.0,
-  },
-  lensDistortion: {
-    enabled: false,
-    barrelDistortion: 0.0,
-    chromaticAberration: 0.0,
-    vignette: 0.0,
-    center: [0.5, 0.5],
-  },
-  motionBlur: {
-    intensity: 1.0,
-    velocityScale: 1.0,
-    samples: 8,
-    enabled: false,
-  },
-  hdri: {
-    enabled: true,
-    url: 'studio',
-    intensity: 2.0,
-    rotation: 0,
-    background: false
-  },
-  godRays: {
-    enabled: false,
-    density: 0.96,
-    decay: 0.9,
-    weight: 0.4,
-    exposure: 0.6,
-    intensity: 1.0,
-  },
-  material: {
-    roughness: 0.176,
-    metalness: 1,
-    reflectivity: 0.87,
-    envMapIntensity: 2.4,
-    clearcoat: 0.9,
-    clearcoatRoughness: 0.39,
-    ior: 2.13,
-    color: '#cccccc',
-    toneMapped: true,
-  },
-};
+const SHOW_CONTROLS = false; // PRODUCTION: Disabled for production deployment
 
 // Custom Lens Distortion Effect
 class LensDistortionEffect extends Effect {
@@ -229,50 +141,78 @@ const CustomLensDistortion: React.FC<{ settings: PostProcessingSettings['lensDis
       effect.center.set(settings.center[0], settings.center[1]);
       
       // Debug: Log the actual values being applied to the shader
-      console.log('🔧 CustomLensDistortion values applied:', {
-        enabled: settings.enabled,
-        barrelDistortion: settings.barrelDistortion,
-        chromaticAberration: settings.chromaticAberration,
-        vignette: settings.vignette,
-        center: settings.center
-      });
+      // PRODUCTION: Disabled debug logging
+      // console.log('🔧 CustomLensDistortion values applied:', {
+      //   enabled: settings.enabled,
+      //   barrelDistortion: settings.barrelDistortion,
+      //   chromaticAberration: settings.chromaticAberration,
+      //   vignette: settings.vignette,
+      //   center: settings.center
+      // });
     }
   }, [effect, settings]);
 
   return <primitive object={effect} />;
 };
 
-// Optimized 60fps HDRI Animation Component with smooth interpolation
+// Production-Safe HDRI Animation Component with stable references and error handling
 const AnimatedEnvironment: React.FC<{ 
   preset: string; 
   background: boolean; 
   enabled: boolean;
   baseRotation: number;
 }> = ({ preset, background, enabled, baseRotation }) => {
-  const rotationRef = useRef(baseRotation);
-  const [environmentRotation, setEnvironmentRotation] = useState([0, baseRotation, 0]);
-  const lastUpdateTime = useRef(0);
+  const rotationArray = useRef<[number, number, number]>([0, baseRotation, 0]);
+  const [rotationState, setRotationState] = useState<[number, number, number]>([0, baseRotation, 0]);
+  const [hasError, setHasError] = useState(false);
 
+  // Ultra-smooth 60fps HDRI rotation to match cursor animation smoothness
   useFrame((state) => {
-    if (enabled) {
-      // Calculate rotation at 60fps with optimized updates
-      const time = state.clock.getElapsedTime();
-      const newRotation = baseRotation + (time * 0.08); // Slower, more elegant rotation
-      
-      // Only update React state at 30fps to maintain smoothness without over-rendering
-      if (time - lastUpdateTime.current > 1/30) { // 30fps updates for React
-        rotationRef.current = newRotation;
-        setEnvironmentRotation([0, newRotation, 0]);
-        lastUpdateTime.current = time;
+    if (enabled && !hasError) {
+      try {
+        const time = state.clock.getElapsedTime();
+        const newRotation = baseRotation + (time * 0.08); // Slower, more elegant rotation
+        
+        // Update array in place to maintain reference stability
+        rotationArray.current[1] = newRotation;
+        
+        // Update at 60fps for butter-smooth HDRI rotation matching cursor animation
+        setRotationState([0, newRotation, 0]);
+      } catch (error) {
+        console.warn('HDRI animation error:', error);
+        setHasError(true);
       }
     }
   });
+
+  // Update base rotation when prop changes
+  useEffect(() => {
+    try {
+      rotationArray.current[1] = baseRotation;
+      setRotationState([0, baseRotation, 0]);
+      setHasError(false); // Reset error state when props change
+    } catch (error) {
+      console.warn('HDRI rotation update error:', error);
+      setHasError(true);
+    }
+  }, [baseRotation]);
+
+  // Fallback to static environment if animation fails
+  if (hasError) {
+    return (
+      <Environment 
+        preset={preset as any}
+        background={background}
+        environmentRotation={[0, baseRotation, 0]}
+      />
+    );
+  }
 
   return (
     <Environment 
       preset={preset as any}
       background={background}
-      environmentRotation={environmentRotation as [number, number, number]}
+      environmentRotation={rotationState}
     />
   );
 };
@@ -472,134 +412,7 @@ const ToneMappingExposure: React.FC<{ exposure: number }> = ({ exposure }) => {
 // 🎯 MODULAR SETTINGS DISCOVERY
 // Automatically loads whatever settings file is in /public/importsettings
 // Just drop any .json settings file in the folder and it will be auto-discovered!
-const discoverAndLoadSettings = async (): Promise<PostProcessingSettings> => {
-  try {
-    // Generate smart file patterns based on current date and common naming conventions
-    const generateFilePatterns = (): string[] => {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      const yDay = String(yesterday.getDate()).padStart(2, '0');
-      const yMonth = String(yesterday.getMonth() + 1).padStart(2, '0');
-      
-      return [
-        // TODAY's patterns (highest priority)
-        `saohouse-settings-${year}-${month}-${day} (3).json`,
-        `saohouse-settings-${year}-${month}-${day} (2).json`, 
-        `saohouse-settings-${year}-${month}-${day} (1).json`,
-        `saohouse-settings-${year}-${month}-${day}.json`,
-        
-        // YESTERDAY's patterns (second priority)
-        `saohouse-settings-${year}-${yMonth}-${yDay} (3).json`,
-        `saohouse-settings-${year}-${yMonth}-${yDay} (2).json`,
-        `saohouse-settings-${year}-${yMonth}-${yDay} (1).json`,
-        `saohouse-settings-${year}-${yMonth}-${yDay}.json`,
-        
-        // Recent weeks (third priority)
-        'saohouse-settings-2025-06-27 (1).json',
-        'saohouse-settings-2025-06-26 (1).json',
-        'saohouse-settings-2025-06-25 (1).json',
-        'saohouse-settings-2025-06-24 (2).json',
-        'saohouse-settings-2025-06-24 (1).json',
-        'saohouse-settings-2025-06-23 (1).json',
-        
-        // Generic/fallback patterns (lowest priority)
-        'latest.json',
-        'current.json', 
-        'settings.json',
-        'saohouse-settings.json',
-        'latest-settings.json',
-        'current-settings.json',
-        'production.json',
-        'config.json'
-      ];
-    };
 
-    const potentialFiles = generateFilePatterns();
-    console.log('🔍 Auto-discovering settings in /public/importsettings...');
-    console.log(`📁 Checking ${potentialFiles.length} potential file patterns...`);
-    
-    // Try each potential file until we find one that works
-    for (const filename of potentialFiles) {
-      try {
-        const response = await fetch(`/importsettings/${filename}`);
-        if (response.ok) {
-          const data = await response.json();
-          
-          // Validate that it's actually a settings file
-          if (data && (data.settings || data.toneMapping || data.material)) {
-            console.log(`✅ Found and loaded settings: ${filename}`);
-            console.log(`📊 Settings timestamp: ${data.timestamp || 'Unknown'}`);
-            
-            // Extract settings from the JSON structure and merge with defaults
-            const importedSettings = data.settings || data;
-            
-            // DEBUG: Log the raw imported settings to see what we're actually loading
-            console.log('🔍 Raw imported lensDistortion settings:', importedSettings.lensDistortion);
-            console.log('🔍 Default lensDistortion settings:', defaultSettings.lensDistortion);
-            return {
-              ...defaultSettings,
-              ...importedSettings,
-              toneMapping: { ...defaultSettings.toneMapping, ...importedSettings.toneMapping },
-              bloom: { ...defaultSettings.bloom, ...importedSettings.bloom },
-              chromaticAberration: { ...defaultSettings.chromaticAberration, ...importedSettings.chromaticAberration },
-              filmGrain: { ...defaultSettings.filmGrain, ...importedSettings.filmGrain },
-              ssao: { ...defaultSettings.ssao, ...importedSettings.ssao },
-              blur: { ...defaultSettings.blur, ...importedSettings.blur },
-              depthOfField: { ...defaultSettings.depthOfField, ...importedSettings.depthOfField },
-              lensDistortion: { ...defaultSettings.lensDistortion, ...importedSettings.lensDistortion },
-              motionBlur: { ...defaultSettings.motionBlur, ...importedSettings.motionBlur },
-              hdri: { ...defaultSettings.hdri, ...importedSettings.hdri },
-              godRays: { ...defaultSettings.godRays, ...importedSettings.godRays },
-              material: { ...defaultSettings.material, ...importedSettings.material },
-            };
-          }
-        }
-      } catch (fileError) {
-        // Continue to next file - this is expected for missing files
-        continue;
-      }
-    }
-    
-    throw new Error('No valid settings files found in /public/importsettings/');
-    
-  } catch (error) {
-    console.warn('⚠️ Failed to auto-discover settings, falling back to localStorage or defaults:', error);
-    
-    // Fallback to localStorage
-    try {
-      const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        console.log('📱 Loaded settings from localStorage fallback');
-        return {
-          ...defaultSettings,
-          ...parsed,
-          toneMapping: { ...defaultSettings.toneMapping, ...parsed.toneMapping },
-          bloom: { ...defaultSettings.bloom, ...parsed.bloom },
-          chromaticAberration: { ...defaultSettings.chromaticAberration, ...parsed.chromaticAberration },
-          filmGrain: { ...defaultSettings.filmGrain, ...parsed.filmGrain },
-          ssao: { ...defaultSettings.ssao, ...parsed.ssao },
-          blur: { ...defaultSettings.blur, ...parsed.blur },
-          depthOfField: { ...defaultSettings.depthOfField, ...parsed.depthOfField },
-          lensDistortion: { ...defaultSettings.lensDistortion, ...parsed.lensDistortion },
-          motionBlur: { ...defaultSettings.motionBlur, ...parsed.motionBlur },
-          hdri: { ...defaultSettings.hdri, ...parsed.hdri },
-          godRays: { ...defaultSettings.godRays, ...parsed.godRays },
-          material: { ...defaultSettings.material, ...parsed.material },
-        };
-      }
-      console.log('🔧 Using default settings (no saved settings found)');
-      return defaultSettings;
-    } catch (localStorageError) {
-      console.warn('❌ Failed to load settings from localStorage:', localStorageError);
-      console.log('🔧 Using default settings (localStorage failed)');
-      return defaultSettings;
-    }
-  }
-};
 
 interface Hero3DLensProps {
   onReady?: () => void;
@@ -608,78 +421,39 @@ interface Hero3DLensProps {
 const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
   console.log('🚀🚀🚀 HERO3D LENS COMPONENT MOUNTING 🚀🚀🚀');
   
-  // Load settings with priority: public folder > localStorage > defaults
-  const [settings, setSettings] = useState<PostProcessingSettings>(defaultSettings);
+  // Use centralized settings manager
+  const { settings, updateSettings, isLoading: isSettingsLoading } = useSettings();
   const [showControls, setShowControls] = useState(false);
+  const [showCenteringGrid, setShowCenteringGrid] = useState(false); // PRODUCTION: Disabled for production deployment
   
-
+  // Mobile camera optimization to reduce fisheye effect
+  const cameraOptimization = useMobileCameraOptimization();
+  
+  // Responsive 3D settings for positioning work
+  const responsive3D = useResponsive3D(
+    undefined, // Default settings
+    false      // IMPROVED: Disable mobile reload for production stability
+  );
   
   // Simplified loading phases - PremiumHero handles loading UI
-  const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
   const [isModelLoaded, setIsModelLoaded] = useState(false);
   const [isMaterialsReady, setIsMaterialsReady] = useState(false);
 
   useEffect(() => {
-    console.log('🎬 Hero3DLens: Component mounted');
-    console.log('🎛️ SHOW_CONTROLS:', SHOW_CONTROLS);
-    console.log('🌍 Environment info:', {
-      NODE_ENV: process.env.NODE_ENV,
-      hostname: window.location.hostname,
-      port: window.location.port
-    });
+    // PRODUCTION: Disabled debug logging
+    // console.log('🎬 Hero3DLens: Component mounted');
+    // console.log('🎛️ SHOW_CONTROLS:', SHOW_CONTROLS);
+    // console.log('🌍 Environment info:', {
+    //   NODE_ENV: process.env.NODE_ENV,
+    //   hostname: window.location.hostname,
+    //   port: window.location.port
+    // });
   }, []);
-
-  // Load settings with auto-discovery
-  useEffect(() => {
-    console.log('🔥🔥🔥 SETTINGS LOADING USEEFFECT TRIGGERED 🔥🔥🔥');
-    
-    const loadSettings = async () => {
-      try {
-        console.log('🔍🔍🔍 STARTING SETTINGS DISCOVERY 🔍🔍🔍');
-        const loadedSettings = await discoverAndLoadSettings();
-        console.log('✅ Hero3DLens: Settings loaded successfully:', {
-          toneMapping: loadedSettings.toneMapping,
-          bloom: loadedSettings.bloom,
-          chromaticAberration: loadedSettings.chromaticAberration,
-          lensDistortion: loadedSettings.lensDistortion,
-          filmGrain: loadedSettings.filmGrain
-        });
-        console.log('🔥 ABOUT TO SET LOADED SETTINGS:', {
-          lensDistortion: loadedSettings.lensDistortion,
-          exposure: loadedSettings.toneMapping.exposure
-        });
-        setSettings(loadedSettings);
-        setIsSettingsLoaded(true);
-        
-        // FORCE a re-log after state update
-        setTimeout(() => {
-          console.log('🔥 SETTINGS AFTER STATE UPDATE - LENS DISTORTION:', loadedSettings.lensDistortion);
-        }, 100);
-      } catch (error) {
-        console.error('❌ Failed to load settings:', error);
-        setIsSettingsLoaded(true);
-      }
-    };
-
-    loadSettings();
-  }, []);
-
-  // Save settings to localStorage whenever they change (but not on initial load)
-  useEffect(() => {
-    if (isSettingsLoaded) {
-      try {
-        console.log('💾 SAVING TO LOCALSTORAGE - LENS DISTORTION:', settings.lensDistortion);
-        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
-      } catch (error) {
-        console.warn('Failed to save settings to localStorage:', error);
-      }
-    }
-  }, [settings, isSettingsLoaded]);
 
   // Handle model loading completion
   const handleModelLoaded = (loaded: boolean) => {
-    // PERFORMANCE: Model loading debug enabled temporarily
-    console.log('📦 Hero3DLens: Model loaded:', loaded);
+    // PRODUCTION: Disabled debug logging
+    // console.log('📦 Hero3DLens: Model loaded:', loaded);
     if (loaded && !isModelLoaded) {
       setIsModelLoaded(true);
     }
@@ -698,12 +472,12 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
   useEffect(() => {
     // PERFORMANCE: Logging disabled for optimal FPS
     // console.log('🔍 Hero3DLens: Loading state check:', {
-    //   isSettingsLoaded,
+    //   isSettingsLoading,
     //   isModelLoaded,
     //   isMaterialsReady
     // });
     
-    if (isSettingsLoaded && isModelLoaded && isMaterialsReady) {
+    if (!isSettingsLoading && isModelLoaded && isMaterialsReady) {
       // PERFORMANCE: Logging disabled for optimal FPS
       // console.log('🎯 Hero3DLens: All loaded, calling onReady');
       // Notify parent component that the scene is ready
@@ -711,41 +485,43 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
         onReady();
       }
     }
-  }, [isSettingsLoaded, isModelLoaded, isMaterialsReady, onReady]);
+  }, [isSettingsLoading, isModelLoaded, isMaterialsReady, onReady]);
 
   const handleSettingsChange = (newSettings: PostProcessingSettings) => {
-    setSettings(newSettings);
+    updateSettings(newSettings);
   };
 
   const handleSettingsLoad = (newSettings: PostProcessingSettings) => {
-    setSettings(newSettings);
+    updateSettings(newSettings);
   };
 
   // Debug: Log settings when they change - PROMINENT LOGGING
   useEffect(() => {
-    console.log('🎨🎨🎨 POST-PROCESSING SETTINGS UPDATED 🎨🎨🎨');
-    console.log('📊 Exposure:', settings.toneMapping.exposure);
-    console.log('✨ Bloom Intensity:', settings.bloom.intensity);
-    console.log('🌈 Chromatic Aberration:', {
-      enabled: settings.chromaticAberration.enabled,
-      offset: settings.chromaticAberration.offset,
-      scaledOffset: settings.chromaticAberration.enabled 
-        ? [settings.chromaticAberration.offset[0] * 0.001, settings.chromaticAberration.offset[1] * 0.001]
-        : [0, 0]
-    });
-    console.log('🔍 Lens Distortion:', {
-      enabled: settings.lensDistortion.enabled,
-      chromaticAberration: settings.lensDistortion.chromaticAberration,
-      vignette: settings.lensDistortion.vignette
-    });
-    console.log('📺 Film Grain Opacity:', settings.filmGrain.opacity);
-    console.log('🌫️ SSAO Intensity:', settings.ssao.intensity);
-    console.log('🎨🎨🎨 END POST-PROCESSING SETTINGS 🎨🎨🎨');
+    // PRODUCTION: Disabled prominent debug logging
+    // console.log('🎨🎨🎨 POST-PROCESSING SETTINGS UPDATED 🎨🎨🎨');
+    // console.log('📊 Exposure:', settings.toneMapping.exposure);
+    // console.log('✨ Bloom Intensity:', settings.bloom.intensity);
+    // console.log('🌈 Chromatic Aberration:', {
+    //   enabled: settings.chromaticAberration.enabled,
+    //   offset: settings.chromaticAberration.offset,
+    //   scaledOffset: settings.chromaticAberration.enabled 
+    //     ? [settings.chromaticAberration.offset[0] * 0.001, settings.chromaticAberration.offset[1] * 0.001]
+    //     : [0, 0]
+    // });
+    // console.log('🔍 Lens Distortion:', {
+    //   enabled: settings.lensDistortion.enabled,
+    //   chromaticAberration: settings.lensDistortion.chromaticAberration,
+    //   vignette: settings.lensDistortion.vignette
+    // });
+    // console.log('📺 Film Grain Opacity:', settings.filmGrain.opacity);
+    // console.log('🌫️ SSAO Intensity:', settings.ssao.intensity);
+    // console.log('🎨🎨🎨 END POST-PROCESSING SETTINGS 🎨🎨🎨');
   }, [settings]);
 
   return (
     <div className="hero-3d-container">
-      <Stats showPanel={0} className="stats-panel" />
+      {/* PRODUCTION: Disabled performance stats monitor */}
+      {/* <Stats showPanel={0} className="stats-panel" /> */}
       
 
 
@@ -786,12 +562,73 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
             currentSettings={settings}
             onSettingsLoad={handleSettingsLoad}
           />
+
+          {/* Centering Grid Toggle - Always visible for positioning work */}
+          <GridToggle 
+            onToggle={setShowCenteringGrid}
+            initialVisible={showCenteringGrid}
+          />
+          
+          {/* Quick Grid Toggle Button for easier access */}
+          <button
+            onClick={() => setShowCenteringGrid(!showCenteringGrid)}
+            style={{
+              position: 'fixed',
+              top: '70px',
+              left: '20px',
+              background: showCenteringGrid ? '#00ff00' : '#666666',
+              color: 'white',
+              border: 'none',
+              padding: '8px 12px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              zIndex: 1001,
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              opacity: 0.9,
+              transition: 'all 0.2s ease',
+            }}
+          >
+            📐 GRID {showCenteringGrid ? 'ON' : 'OFF'}
+          </button>
+
+          {/* Device Info Display for positioning work */}
+          <div style={{
+            position: 'fixed',
+            top: '110px',
+            left: '20px',
+            background: 'rgba(0, 0, 0, 0.8)',
+            color: '#ffffff',
+            padding: '8px 12px',
+            borderRadius: '4px',
+            zIndex: 1001,
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '10px',
+            lineHeight: '1.4',
+            opacity: 0.9,
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+          }}>
+            <div>🖥️ <strong>{responsive3D.deviceType.toUpperCase()}</strong> | 📱 <strong>{responsive3D.orientation.toUpperCase()}</strong></div>
+            <div>📏 Scale: <strong>{responsive3D.scale.toFixed(4)}</strong></div>
+            <div>📍 Logo Position: <strong>[{responsive3D.position[0].toFixed(2)}, {responsive3D.position[1].toFixed(2)}, {responsive3D.position[2].toFixed(2)}]</strong></div>
+            <div>📐 Camera FOV: <strong>{cameraOptimization.fov}°</strong></div>
+            <div style={{ marginTop: '4px', color: '#aaa', fontSize: '9px' }}>
+              💡 Edit: <strong>src/hooks/useResponsive3D.ts</strong>
+            </div>
+          </div>
+
+          {/* Viewport-Based Centering Test Display */}
+          <ViewportCenterTest />
         </>
       )}
 
       {/* Canvas with enhanced quality settings for crisp rendering */}
       <Canvas
-        camera={{ position: [0, 0, 3], fov: 75 }}
+        camera={{ 
+          position: cameraOptimization.position, 
+          fov: cameraOptimization.fov 
+        }}
         style={{ 
           width: '100vw', 
           height: '100vh',
@@ -845,15 +682,22 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
           castShadow
         />
         
-        {/* Animated Environment map */}
-        <AnimatedEnvironment 
-          preset={settings.hdri.enabled && settings.hdri.url ? settings.hdri.url : "studio"}
-          background={settings.hdri.background}
-          enabled={settings.hdri.enabled}
-          baseRotation={settings.hdri.rotation}
-        />
+        {/* Animated Environment map with production fallback */}
+        {settings.hdri.enabled ? (
+          <AnimatedEnvironment 
+            preset={settings.hdri.url || "studio"}
+            background={settings.hdri.background}
+            enabled={settings.hdri.enabled}
+            baseRotation={settings.hdri.rotation}
+          />
+        ) : (
+          <Environment preset="studio" background={false} />
+        )}
         
         <Suspense fallback={null}>
+          {/* Mobile Camera Controller - Applies optimized camera settings inside Canvas */}
+          <MobileCameraController optimization={cameraOptimization} />
+          
           <ToneMappingExposure exposure={settings.toneMapping.exposure} />
           
 
@@ -863,6 +707,19 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
             onModelLoaded={handleModelLoaded}
             onMaterialsReady={handleMaterialsReady}
           />
+          
+          {/* PRODUCTION: Centering Grid only shown in development */}
+          {SHOW_CONTROLS && (
+            <CenteringGrid 
+              visible={showCenteringGrid}
+              gridSize={10}
+              divisions={20}
+              centerLineColor="#ff0000"
+              gridColor="#444444"
+              opacity={0.8}
+            />
+          )}
+          
           <AnimatedOrbitControls />
           
           {/* Post-processing effects with all the cool visual effects */}
@@ -885,15 +742,24 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
             
             <ChromaticAberration 
               offset={settings.chromaticAberration.enabled 
-                ? [settings.chromaticAberration.offset[0] * 0.001, settings.chromaticAberration.offset[1] * 0.001]
+                ? [
+                    settings.chromaticAberration.offset[0] * 0.001 * cameraOptimization.lensDistortionReduction.chromaticAberrationMultiplier,
+                    settings.chromaticAberration.offset[1] * 0.001 * cameraOptimization.lensDistortionReduction.chromaticAberrationMultiplier
+                  ]
                 : [0, 0]
               }
             />
             
-            {/* Custom Lens Distortion - Main source of chromatic aberration effect */}
+            {/* Custom Lens Distortion - Mobile-optimized to reduce fisheye effect */}
             <CustomLensDistortion 
               key={`lens-${settings.lensDistortion.enabled}-${settings.lensDistortion.chromaticAberration}-${settings.lensDistortion.vignette}`}
-              settings={settings.lensDistortion.enabled ? settings.lensDistortion : {
+              settings={settings.lensDistortion.enabled ? {
+                enabled: settings.lensDistortion.enabled,
+                barrelDistortion: settings.lensDistortion.barrelDistortion + cameraOptimization.lensDistortionReduction.barrelDistortionAdjustment,
+                chromaticAberration: settings.lensDistortion.chromaticAberration * cameraOptimization.lensDistortionReduction.chromaticAberrationMultiplier,
+                vignette: settings.lensDistortion.vignette * cameraOptimization.lensDistortionReduction.vignetteMultiplier,
+                center: settings.lensDistortion.center
+              } : {
                 enabled: false,
                 barrelDistortion: 0.0,
                 chromaticAberration: 0.0,
@@ -903,7 +769,7 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
             />
             
             <Vignette
-              offset={settings.lensDistortion.vignette}
+              offset={settings.lensDistortion.vignette * cameraOptimization.lensDistortionReduction.vignetteMultiplier}
               darkness={0.5}
             />
 

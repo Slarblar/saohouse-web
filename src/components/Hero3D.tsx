@@ -157,8 +157,9 @@ const discoverAndLoadSettings = async (): Promise<PostProcessingSettings> => {
     };
 
     const potentialFiles = generateFilePatterns();
-    console.log('🔍 Hero3D: Auto-discovering settings in /public/importsettings...');
-    console.log(`📁 Hero3D: Checking ${potentialFiles.length} potential file patterns...`);
+    // PRODUCTION: Disabled debug logging
+    // console.log('🔍 Hero3D: Auto-discovering settings in /public/importsettings...');
+    // console.log(`📁 Hero3D: Checking ${potentialFiles.length} potential file patterns...`);
     
     for (const filename of potentialFiles) {
       try {
@@ -167,8 +168,9 @@ const discoverAndLoadSettings = async (): Promise<PostProcessingSettings> => {
           const data = await response.json();
           
           if (data && (data.settings || data.toneMapping || data.material)) {
-            console.log(`✅ Hero3D: Found and loaded settings: ${filename}`);
-            console.log(`📊 Hero3D: Settings timestamp: ${data.timestamp || 'Unknown'}`);
+            // PRODUCTION: Disabled debug logging
+            // console.log(`✅ Hero3D: Found and loaded settings: ${filename}`);
+            // console.log(`📊 Hero3D: Settings timestamp: ${data.timestamp || 'Unknown'}`);
             
             const importedSettings = data.settings || data;
             
@@ -204,14 +206,17 @@ const discoverAndLoadSettings = async (): Promise<PostProcessingSettings> => {
       const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        console.log('📱 Hero3D: Loaded settings from localStorage fallback');
+        // PRODUCTION: Disabled debug logging
+        // console.log('📱 Hero3D: Loaded settings from localStorage fallback');
         return { ...defaultSettings, ...parsed };
       }
-      console.log('🔧 Hero3D: Using default settings (no saved settings found)');
+      // PRODUCTION: Disabled debug logging
+      // console.log('🔧 Hero3D: Using default settings (no saved settings found)');
       return defaultSettings;
     } catch (localStorageError) {
       console.warn('❌ Hero3D: Failed to load settings from localStorage:', localStorageError);
-      console.log('🔧 Hero3D: Using default settings (localStorage failed)');
+      // PRODUCTION: Disabled debug logging
+      // console.log('🔧 Hero3D: Using default settings (localStorage failed)');
       return defaultSettings;
     }
   }
@@ -462,17 +467,19 @@ const Hero3D: React.FC = () => {
   
   // Load settings with auto-discovery on component mount
   useEffect(() => {
-    console.log('🔥 Hero3D: Starting settings discovery...');
+    // PRODUCTION: Disabled debug logging
+    // console.log('🔥 Hero3D: Starting settings discovery...');
     
     const loadSettings = async () => {
       try {
         const loadedSettings = await discoverAndLoadSettings();
-        console.log('✅ Hero3D: Settings loaded successfully:', {
-          toneMapping: loadedSettings.toneMapping,
-          bloom: loadedSettings.bloom,
-          lensDistortion: loadedSettings.lensDistortion,
-          material: loadedSettings.material
-        });
+        // PRODUCTION: Disabled debug logging
+        // console.log('✅ Hero3D: Settings loaded successfully:', {
+        //   toneMapping: loadedSettings.toneMapping,
+        //   bloom: loadedSettings.bloom,
+        //   lensDistortion: loadedSettings.lensDistortion,
+        //   material: loadedSettings.material
+        // });
         setSettings(loadedSettings);
       } catch (error) {
         console.error('❌ Hero3D: Failed to load settings:', error);
@@ -496,7 +503,8 @@ const Hero3D: React.FC = () => {
   }, [deviceInfo]);
 
   const handleCreated = () => {
-    console.log('✨ Canvas created for device:', deviceInfo.screenSize);
+    // PRODUCTION: Disabled debug logging
+    // console.log('✨ Canvas created for device:', deviceInfo.screenSize);
     const loadingDelay = deviceInfo.isMobile ? 300 : 500; // Faster loading on mobile
     
     setTimeout(() => {
@@ -532,7 +540,8 @@ const Hero3D: React.FC = () => {
   return (
     <ErrorBoundary>
       <div className="hero-3d-container">
-        <Stats showPanel={0} className="stats-panel" />
+        {/* PRODUCTION: Disabled performance stats monitor */}
+      {/* <Stats showPanel={0} className="stats-panel" /> */}
         {isLoading && (
           <div className="loading-screen">
             <div className="loading-text">

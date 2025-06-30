@@ -7,27 +7,28 @@ const PremiumHero: React.FC = () => {
   const heroContainerRef = useRef<HTMLDivElement>(null);
 
   const handleSceneReady = () => {
-    // The 3D scene has loaded all its assets in the background.
-    // Now, we can start the orchestrated reveal.
-    console.log('🎯 PremiumHero: Scene is ready, starting transition');
+    // PRODUCTION: Disabled debug logging
+    // console.log('🎯 PremiumHero: Scene is ready, starting transition');
     setIsSceneReady(true);
   };
 
   useEffect(() => {
-    console.log('🚀 PremiumHero: Component mounted');
-    console.log('🔍 ENVIRONMENT CHECK - Using Hero3DLens component');
-    console.log('📍 NODE_ENV:', process.env.NODE_ENV);
-    console.log('🌐 Production URL detection:', window.location.hostname);
-    console.log('🏠 Local Port Detection:', window.location.port);
-    console.log('⚙️ SHOW_CONTROLS should be enabled for local testing');
+    // PRODUCTION: Disabled debug logging
+    // console.log('🚀 PremiumHero: Component mounted');
+    // console.log('🔍 ENVIRONMENT CHECK - Using Hero3DLens component');
+    // console.log('📍 NODE_ENV:', process.env.NODE_ENV);
+    // console.log('🌐 Production URL detection:', window.location.hostname);
+    // console.log('🏠 Local Port Detection:', window.location.port);
+    // console.log('⚙️ SHOW_CONTROLS should be enabled for local testing');
   }, []);
 
   useEffect(() => {
-    console.log('🔄 PremiumHero: isSceneReady changed to:', isSceneReady);
+    // PRODUCTION: Disabled debug logging
+    // console.log('🔄 PremiumHero: isSceneReady changed to:', isSceneReady);
     
     if (isSceneReady && heroContainerRef.current) {
-      // Start the animation process
-      console.log('✨ PremiumHero: Starting container animation');
+      // PRODUCTION: Disabled debug logging
+      // console.log('✨ PremiumHero: Starting container animation');
       
       const container = heroContainerRef.current;
       
@@ -50,7 +51,8 @@ const PremiumHero: React.FC = () => {
       // Clean up animation properties after it's finished to save resources
       const cleanupTimer = setTimeout(() => {
         container.style.willChange = 'auto';
-        console.log('🧹 PremiumHero: Animation cleanup complete');
+        // PRODUCTION: Disabled debug logging
+        // console.log('🧹 PremiumHero: Animation cleanup complete');
       }, 2500);
 
       return () => clearTimeout(cleanupTimer);

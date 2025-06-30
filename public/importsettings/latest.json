@@ -1,11 +1,11 @@
 {
   "version": "1.0",
-  "timestamp": "2025-06-27T22:58:06.156Z",
+  "timestamp": "2025-06-29T21:12:42.226Z",
   "settings": {
     "toneMapping": {
-      "mode": 2,
-      "exposure": 2.5,
-      "whitePoint": 16,
+      "mode": 3,
+      "exposure": 1.4,
+      "whitePoint": 2,
       "middleGrey": 0.5,
       "adaptation": 1.3
     },
