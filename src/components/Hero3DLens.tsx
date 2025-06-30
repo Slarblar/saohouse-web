@@ -736,7 +736,7 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
               adaptationRate={settings.toneMapping.adaptation}
             />
             
-            {performanceOpt.enableBloom && (
+            {performanceOpt.enableBloom ? (
               <Bloom 
                 intensity={settings.bloom.intensity * performanceOpt.bloomIntensityMultiplier}
                 luminanceThreshold={settings.bloom.luminanceThreshold * performanceOpt.bloomThresholdMultiplier}
@@ -744,7 +744,7 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
                 mipmapBlur={performanceOpt.enableMipmapBlur ? settings.bloom.mipmapBlur : false}
                 opacity={settings.bloom.opacity}
               />
-            )}
+            ) : null}
             
             <ChromaticAberration 
               offset={settings.chromaticAberration.enabled 
@@ -789,17 +789,17 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
             />
 
             {/* Mobile-optimized N8AO - Performance-based conditional rendering */}
-            {performanceOpt.enableN8AO && (
+            {performanceOpt.enableN8AO ? (
               <N8AO
                 aoRadius={settings.ssao.radius * performanceOpt.ssaoRadiusMultiplier}
                 intensity={settings.ssao.intensity * performanceOpt.ssaoIntensityMultiplier}
                 distanceFalloff={settings.ssao.distanceFalloff}
                 denoiseRadius={12 * performanceOpt.ssaoDenoiseRadiusMultiplier}
               />
-            )}
+            ) : null}
 
             {/* Mobile-optimized FXAA - Performance-based conditional rendering */}
-            {performanceOpt.enableFXAA && <FXAA />}
+            {performanceOpt.enableFXAA ? <FXAA /> : null}
           </EffectComposer>
         </Suspense>
       </Canvas>
