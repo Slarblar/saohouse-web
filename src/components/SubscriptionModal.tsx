@@ -10,7 +10,7 @@ interface SubscriptionModalProps {
 
 const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose }) => {
   const [email, setEmail] = useState('');
-  const { isLoading, isSuccess, error, subscribe, reset } = useSubscription();
+  const { isLoading, isSuccess, error, subscribe, reset, successMessage } = useSubscription();
 
   // Apply global modal blur effect
   useEffect(() => {
@@ -25,14 +25,14 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose }
     };
   }, [isOpen]);
 
-  // Auto close modal after successful subscription
+  // Auto close modal after successful subscription (3 seconds for better UX)
   useEffect(() => {
     if (isSuccess) {
       setTimeout(() => {
         onClose();
         reset();
         setEmail('');
-      }, 2500);
+      }, 3000); // Changed to 3 seconds
     }
   }, [isSuccess, onClose, reset]);
 
@@ -114,8 +114,20 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose }
               <div className="success-icon">
                 <Check size={24} />
               </div>
-              <h3 className="success-title">You're all set!</h3>
-              <p className="success-message">We'll be in touch with exciting updates.</p>
+              <div className="success-content">
+                {successMessage ? (
+                  successMessage.split('\n').map((line, index) => (
+                    <div key={index} className={index === 0 ? 'success-title' : 'success-subtitle'}>
+                      {line}
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <h3 className="success-title">Thanks for Joining</h3>
+                    <p className="success-subtitle">We'll be in touch</p>
+                  </>
+                )}
+              </div>
             </div>
           )}
         </div>

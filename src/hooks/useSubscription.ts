@@ -36,12 +36,14 @@ export function useSubscription(): UseSubscriptionState {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const subscribe = async (email: string): Promise<void> => {
     // Reset previous state
     setIsLoading(true);
     setIsSuccess(false);
     setError(null);
+    setSuccessMessage(null);
 
     // Validate email on frontend first
     if (!validateEmail(email)) {
@@ -55,6 +57,7 @@ export function useSubscription(): UseSubscriptionState {
       
       if (result.success) {
         setIsSuccess(true);
+        setSuccessMessage(result.message || 'Thanks for Joining\nWe\'ll be in touch');
       } else {
         setError(result.error || 'Something went wrong. Please try again.');
       }
@@ -70,12 +73,14 @@ export function useSubscription(): UseSubscriptionState {
     setIsLoading(false);
     setIsSuccess(false);
     setError(null);
+    setSuccessMessage(null);
   };
 
   return {
     isLoading,
     isSuccess,
     error,
+    successMessage,
     subscribe,
     reset,
   };

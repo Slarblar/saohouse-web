@@ -86,7 +86,7 @@ export default async function handler(req, res) {
       // Success - subscriber added or already exists
       res.status(200).json({
         success: true,
-        message: "We'll be in touch!",
+        message: "Thanks for Joining\nWe'll be in touch",
       });
       return;
     }
@@ -97,7 +97,7 @@ export default async function handler(req, res) {
       if (responseData.errors?.email?.includes('The email has already been taken.')) {
         res.status(200).json({
           success: true,
-          message: "We'll be in touch!",
+          message: "Thanks for Joining\nWe'll be in touch",
         });
         return;
       }

@@ -78,6 +78,7 @@ export interface UseSubscriptionState {
   isLoading: boolean;
   isSuccess: boolean;
   error: string | null;
+  successMessage: string | null;
   subscribe: (email: string) => Promise<void>;
   reset: () => void;
 } 
