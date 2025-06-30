@@ -27,6 +27,7 @@ import { useSettings } from '../utils/settingsManager';
 import { useMobileCameraOptimization } from '../hooks/useMobileCameraOptimization';
 import { MobileCameraController } from './MobileCameraController';
 import { useResponsive3D } from '../hooks/useResponsive3D';
+import { useMobilePerformanceOptimization } from '../hooks/useMobilePerformanceOptimization';
 import './Hero3D.css';
 
 // Set to true when you need to adjust settings
@@ -435,6 +436,9 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
     false      // IMPROVED: Disable mobile reload for production stability
   );
   
+  // Mobile performance optimizations
+  const performanceOpt = useMobilePerformanceOptimization();
+  
   // Simplified loading phases - PremiumHero handles loading UI
   const [isModelLoaded, setIsModelLoaded] = useState(false);
   const [isMaterialsReady, setIsMaterialsReady] = useState(false);
@@ -636,18 +640,18 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
           pointerEvents: 'auto'
         }}
         gl={{ 
-          antialias: true,
+          antialias: performanceOpt.antialiasing,
           alpha: false,
           stencil: false,
           depth: true,
-          powerPreference: "high-performance",
+          powerPreference: performanceOpt.antialiasing ? "high-performance" : "default",
           // Enhanced rendering settings for crisp quality
           preserveDrawingBuffer: false,
           premultipliedAlpha: false,
           logarithmicDepthBuffer: false,
         }}
-        // PERFORMANCE: Optimized pixel ratio for smooth FPS with crisp visuals
-        dpr={[1, 2]} // Range from 1x to 2x pixel density (3x was causing FPS drops)
+        // PERFORMANCE: Mobile-optimized pixel ratio for smooth FPS with crisp visuals
+        dpr={[1, performanceOpt.pixelRatioMax]} // Adaptive pixel density based on device capabilities
         onCreated={({ gl, scene }) => {
           // PERFORMANCE: Optimized shadow settings for smooth FPS
           gl.shadowMap.enabled = true;
@@ -732,13 +736,15 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
               adaptationRate={settings.toneMapping.adaptation}
             />
             
-            <Bloom 
-              intensity={settings.bloom.intensity}
-              luminanceThreshold={settings.bloom.luminanceThreshold}
-              luminanceSmoothing={settings.bloom.luminanceSmoothing}
-              mipmapBlur={settings.bloom.mipmapBlur}
-              opacity={settings.bloom.opacity}
-            />
+            {performanceOpt.enableBloom && (
+              <Bloom 
+                intensity={settings.bloom.intensity * performanceOpt.bloomIntensityMultiplier}
+                luminanceThreshold={settings.bloom.luminanceThreshold * performanceOpt.bloomThresholdMultiplier}
+                luminanceSmoothing={settings.bloom.luminanceSmoothing}
+                mipmapBlur={performanceOpt.enableMipmapBlur ? settings.bloom.mipmapBlur : false}
+                opacity={settings.bloom.opacity}
+              />
+            )}
             
             <ChromaticAberration 
               offset={settings.chromaticAberration.enabled 
@@ -779,18 +785,21 @@ const Hero3DLens: React.FC<Hero3DLensProps> = ({ onReady }) => {
             />
 
             <Noise
-              opacity={settings.filmGrain.opacity}
+              opacity={settings.filmGrain.opacity * performanceOpt.noiseOpacityMultiplier}
             />
 
-            {/* Use N8AO instead of SSAO as it's more modern and self-contained */}
-            <N8AO
-              aoRadius={settings.ssao.radius}
-              intensity={settings.ssao.intensity}
-              distanceFalloff={settings.ssao.distanceFalloff}
-              denoiseRadius={12}
-            />
+            {/* Mobile-optimized N8AO - Performance-based conditional rendering */}
+            {performanceOpt.enableN8AO && (
+              <N8AO
+                aoRadius={settings.ssao.radius * performanceOpt.ssaoRadiusMultiplier}
+                intensity={settings.ssao.intensity * performanceOpt.ssaoIntensityMultiplier}
+                distanceFalloff={settings.ssao.distanceFalloff}
+                denoiseRadius={12 * performanceOpt.ssaoDenoiseRadiusMultiplier}
+              />
+            )}
 
-            <FXAA />
+            {/* Mobile-optimized FXAA - Performance-based conditional rendering */}
+            {performanceOpt.enableFXAA && <FXAA />}
           </EffectComposer>
         </Suspense>
       </Canvas>
