@@ -1,53 +1,10 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-
-// TypeScript interfaces for MailerLite API
-interface SubscribeRequestBody {
-  email: string;
-}
-
-interface MailerLiteSubscriber {
-  email: string;
-  groups?: string[];
-}
-
-interface MailerLiteApiResponse {
-  data?: {
-    id: string;
-    email: string;
-    status: string;
-  };
-  message?: string;
-  errors?: {
-    email?: string[];
-    [key: string]: string[] | undefined;
-  };
-}
-
-interface FunctionResponse {
-  success: boolean;
-  message?: string;
-  error?: string;
-}
-
-// Email validation regex
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-// CORS headers for frontend integration
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Access-Control-Max-Age': '86400',
-};
-
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-): Promise<void> {
+// Simple JavaScript API function for MailerLite subscription
+export default async function handler(req, res) {
   // Set CORS headers
-  Object.entries(corsHeaders).forEach(([key, value]) => {
-    res.setHeader(key, value);
-  });
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Max-Age', '86400');
 
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
@@ -57,11 +14,10 @@ export default async function handler(
 
   // Only allow POST method
   if (req.method !== 'POST') {
-    const response: FunctionResponse = {
+    res.status(405).json({
       success: false,
       error: 'Method not allowed. Only POST requests are accepted.',
-    };
-    res.status(405).json(response);
+    });
     return;
   }
 
@@ -70,53 +26,38 @@ export default async function handler(
     const apiKey = process.env.MAILERLITE_API_KEY;
     if (!apiKey) {
       console.error('MAILERLITE_API_KEY environment variable is not set');
-      const response: FunctionResponse = {
+      res.status(500).json({
         success: false,
         error: 'Server configuration error. Please try again later.',
-      };
-      res.status(500).json(response);
+      });
       return;
     }
 
     // Parse and validate request body
-    const body = req.body as SubscribeRequestBody;
-    
-    if (!body || typeof body !== 'object') {
-      const response: FunctionResponse = {
-        success: false,
-        error: 'Invalid request format. Please provide a valid email.',
-      };
-      res.status(400).json(response);
-      return;
-    }
+    const { email } = req.body;
 
-    const { email } = body;
-
-    // Validate email
     if (!email || typeof email !== 'string') {
-      const response: FunctionResponse = {
+      res.status(400).json({
         success: false,
         error: 'Email is required.',
-      };
-      res.status(400).json(response);
+      });
       return;
     }
 
     const trimmedEmail = email.trim().toLowerCase();
     
-    if (!EMAIL_REGEX.test(trimmedEmail)) {
-      const response: FunctionResponse = {
+    // Simple email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      res.status(400).json({
         success: false,
         error: 'Please provide a valid email address.',
-      };
-      res.status(400).json(response);
+      });
       return;
     }
 
     // Prepare MailerLite subscriber data
-    const subscriberData: MailerLiteSubscriber = {
-      email: trimmedEmail,
-    };
+    const subscriberData = { email: trimmedEmail };
 
     // Add group ID if provided
     const groupId = process.env.MAILERLITE_GROUP_ID;
@@ -138,56 +79,51 @@ export default async function handler(
       }
     );
 
-    const responseData: MailerLiteApiResponse = await mailerLiteResponse.json();
+    const responseData = await mailerLiteResponse.json();
 
     // Handle MailerLite API responses
     if (mailerLiteResponse.ok) {
       // Success - subscriber added or already exists
-      const response: FunctionResponse = {
+      res.status(200).json({
         success: true,
         message: "We'll be in touch!",
-      };
-      res.status(200).json(response);
+      });
       return;
     }
 
     // Handle specific MailerLite errors
     if (mailerLiteResponse.status === 422) {
-      // Validation errors from MailerLite
+      // Check if email already exists
       if (responseData.errors?.email?.includes('The email has already been taken.')) {
-        const response: FunctionResponse = {
+        res.status(200).json({
           success: true,
           message: "We'll be in touch!",
-        };
-        res.status(200).json(response);
+        });
         return;
       }
       
-      const response: FunctionResponse = {
+      res.status(400).json({
         success: false,
         error: 'Please provide a valid email address.',
-      };
-      res.status(400).json(response);
+      });
       return;
     }
 
     if (mailerLiteResponse.status === 401) {
       console.error('MailerLite API authentication failed');
-      const response: FunctionResponse = {
+      res.status(500).json({
         success: false,
         error: 'Server configuration error. Please try again later.',
-      };
-      res.status(500).json(response);
+      });
       return;
     }
 
     if (mailerLiteResponse.status === 429) {
       console.error('MailerLite API rate limit exceeded');
-      const response: FunctionResponse = {
+      res.status(429).json({
         success: false,
         error: 'Too many requests. Please try again in a few minutes.',
-      };
-      res.status(429).json(response);
+      });
       return;
     }
 
@@ -198,31 +134,27 @@ export default async function handler(
       response: responseData,
     });
 
-    const response: FunctionResponse = {
+    res.status(500).json({
       success: false,
-      error: 'Uh oh something went wrong, try again!',
-    };
-    res.status(500).json(response);
+      error: 'Something went wrong. Please try again!',
+    });
 
   } catch (error) {
-    // Handle network failures and other unexpected errors
     console.error('Subscription error:', error);
 
     // Check if it's a network error
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      const response: FunctionResponse = {
+    if (error.message && error.message.includes('fetch')) {
+      res.status(503).json({
         success: false,
         error: 'Network error. Please check your connection and try again.',
-      };
-      res.status(503).json(response);
+      });
       return;
     }
 
     // Generic error fallback
-    const response: FunctionResponse = {
+    res.status(500).json({
       success: false,
-      error: 'Uh oh something went wrong, try again!',
-    };
-    res.status(500).json(response);
+      error: 'Something went wrong. Please try again!',
+    });
   }
 } 
