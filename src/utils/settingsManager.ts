@@ -108,7 +108,7 @@ interface SettingsCache {
 class SettingsManager {
   private static instance: SettingsManager;
   private currentSettings: PostProcessingSettings = DEFAULT_SETTINGS;
-  private isLoading = false;
+  // private isLoading = false;
   private loadPromise: Promise<PostProcessingSettings> | null = null;
   private subscribers: Set<(settings: PostProcessingSettings) => void> = new Set();
 
@@ -153,7 +153,7 @@ class SettingsManager {
     }
 
     // Start loading
-    this.isLoading = true;
+    // this.isLoading = true;
     this.loadPromise = this.performSettingsLoad();
 
     try {
@@ -162,7 +162,7 @@ class SettingsManager {
       this.notifySubscribers();
       return settings;
     } finally {
-      this.isLoading = false;
+      // this.isLoading = false;
       this.loadPromise = null;
     }
   }

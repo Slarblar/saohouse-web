@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import * as THREE from 'three';
+// import * as THREE from 'three';
 
 interface ViewportCenter {
   position: [number, number, number];

@@ -220,9 +220,9 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
     }
   }, [gltf.scene, onMaterialsReady]); // Removed activeMaterialSettings to prevent re-runs
 
-  // Animation activation state
-  const animationActivationRef = useRef<number>(0);
-  const cursorActivationDelayRef = useRef<number>(0);
+  // Animation activation state (for future use)
+  // const animationActivationRef = useRef<number>(0);
+  // const cursorActivationDelayRef = useRef<number>(0);
   const componentStartTimeRef = useRef<number>(0);
   
   // Initialize component start time in useFrame for consistency
@@ -278,45 +278,45 @@ const ChromeObject: React.FC<ChromeObjectProps> = ({
   
   // Motion smoothing buffer for responsive smooth animation
   const rotationHistoryRef = useRef<RotationState[]>([]);
-  const SMOOTHING_BUFFER_SIZE = 2; // Reduced for more responsive feel
+  // const SMOOTHING_BUFFER_SIZE = 2; // Reduced for more responsive feel
   
-  // Smoothing helper function for ultra-smooth easing
-  const smoothEase = (t: number): number => {
-    // Smooth step function for buttery interpolation
-    return t * t * (3.0 - 2.0 * t);
-  };
+  // Smoothing helper function for ultra-smooth easing (for future use)
+  // const smoothEase = (t: number): number => {
+  //   // Smooth step function for buttery interpolation
+  //   return t * t * (3.0 - 2.0 * t);
+  // };
   
-  // Motion smoothing function for glass-like smoothness
-  const smoothRotation = (newRotation: RotationState): RotationState => {
-    // Add new rotation to history
-    rotationHistoryRef.current.push(newRotation);
-    
-    // Keep only recent frames
-    if (rotationHistoryRef.current.length > SMOOTHING_BUFFER_SIZE) {
-      rotationHistoryRef.current.shift();
-    }
-    
-    // Average the rotations for ultra-smooth motion
-    const avgRotation = rotationHistoryRef.current.reduce(
-      (acc, rot) => ({
-        x: acc.x + rot.x,
-        y: acc.y + rot.y,
-        z: acc.z + rot.z
-      }),
-      { x: 0, y: 0, z: 0 }
-    );
-    
-    const count = rotationHistoryRef.current.length;
-    return {
-      x: avgRotation.x / count,
-      y: avgRotation.y / count,
-      z: avgRotation.z / count
-    };
-  };
+  // Motion smoothing function for glass-like smoothness (for future use)
+  // const smoothRotation = (newRotation: RotationState): RotationState => {
+  //   // Add new rotation to history
+  //   rotationHistoryRef.current.push(newRotation);
+  //   
+  //   // Keep only recent frames
+  //   if (rotationHistoryRef.current.length > SMOOTHING_BUFFER_SIZE) {
+  //     rotationHistoryRef.current.shift();
+  //   }
+  //   
+  //   // Average the rotations for ultra-smooth motion
+  //   const avgRotation = rotationHistoryRef.current.reduce(
+  //     (acc, rot) => ({
+  //       x: acc.x + rot.x,
+  //       y: acc.y + rot.y,
+  //       z: acc.z + rot.z
+  //     }),
+  //     { x: 0, y: 0, z: 0 }
+  //   );
+  //   
+  //   const count = rotationHistoryRef.current.length;
+  //   return {
+  //     x: avgRotation.x / count,
+  //     y: avgRotation.y / count,
+  //     z: avgRotation.z / count
+  //   };
+  // };
 
-  // PERFORMANCE: Frame rate monitoring and optimization
-  const debugLogRef = useRef<number>(0);
-  const idleDetectionRef = useRef<number>(0);
+  // PERFORMANCE: Frame rate monitoring and optimization (for future use)
+  // const debugLogRef = useRef<number>(0);
+  // const idleDetectionRef = useRef<number>(0);
   
   // SIMPLIFIED, STABLE ANIMATION SYSTEM
   useFrame((state) => {

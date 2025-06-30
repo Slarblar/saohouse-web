@@ -1,6 +1,6 @@
 import React, { Suspense, useState, useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Environment, Stats } from '@react-three/drei';
+import { OrbitControls, Environment } from '@react-three/drei';
 import { 
   EffectComposer,
   Bloom,
@@ -15,7 +15,7 @@ import {
 import { Effect, BlendFunction } from 'postprocessing';
 import * as THREE from 'three';
 import ChromeObject from './ChromeObject';
-import { ToneMappingMode } from 'postprocessing';
+// import { ToneMappingMode } from 'postprocessing';
 import ToneMappingControls from './ToneMappingControls';
 import SettingsManager from './SettingsManager';
 import CenteringGrid from './CenteringGrid';

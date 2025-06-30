@@ -15,9 +15,7 @@ interface CenteringGridProps {
 
 const CenteringGrid: React.FC<CenteringGridProps> = ({
   visible = true,
-  gridSize = 10,
   divisions = 20,
-  centerLineWidth = 4,
   centerLineColor = '#ff0000',
   gridColor = '#444444',
   opacity = 0.8,
@@ -97,23 +95,23 @@ const CenteringGrid: React.FC<CenteringGridProps> = ({
     return geometry;
   }, [viewport.width, viewport.height]);
 
-  // Create coordinate text geometry positions
-  const coordinatePositions = useMemo(() => {
-    const positions = [];
-    const halfWidth = gridDimensions.width / 2;
-    const halfHeight = gridDimensions.height / 2;
-    
-    // Add coordinate markers
-    positions.push(
-      { position: [0, 0, 0.02], text: '(0,0)' },
-      { position: [halfWidth * 0.8, 0, 0.02], text: '+X' },
-      { position: [-halfWidth * 0.8, 0, 0.02], text: '-X' },
-      { position: [0, halfHeight * 0.8, 0.02], text: '+Y' },
-      { position: [0, -halfHeight * 0.8, 0.02], text: '-Y' },
-    );
-
-    return positions;
-  }, [gridDimensions]);
+  // Coordinate positions for future use
+  // const coordinatePositions = useMemo(() => {
+  //   const positions = [];
+  //   const halfWidth = gridDimensions.width / 2;
+  //   const halfHeight = gridDimensions.height / 2;
+  //   
+  //   // Add coordinate markers
+  //   positions.push(
+  //     { position: [0, 0, 0.02], text: '(0,0)' },
+  //     { position: [halfWidth * 0.8, 0, 0.02], text: '+X' },
+  //     { position: [-halfWidth * 0.8, 0, 0.02], text: '-X' },
+  //     { position: [0, halfHeight * 0.8, 0.02], text: '+Y' },
+  //     { position: [0, -halfHeight * 0.8, 0.02], text: '-Y' },
+  //   );
+  //
+  //   return positions;
+  // }, [gridDimensions]);
 
   if (!visible) return null;
 

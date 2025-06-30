@@ -44,7 +44,7 @@ export const useBatteryOptimization = (
   });
 
   const thermalCheckRef = useRef<number>(0);
-  const batteryCheckRef = useRef<number>(0);
+  // const batteryCheckRef = useRef<number>(0);
 
   // Battery API monitoring
   useEffect(() => {
@@ -107,7 +107,7 @@ export const useBatteryOptimization = (
       
       // Heuristic thermal detection based on performance degradation
       if (thermalCheckRef.current % 60 === 0) { // Check every 2 seconds at 30fps
-        const now = performance.now();
+        // const now = performance.now();
         const memoryPressure = deviceMemory && deviceMemory < 4; // Low memory devices tend to throttle
         const slowConnection = connectionType && ['slow-2g', '2g'].includes(connectionType);
         
@@ -132,7 +132,7 @@ export const useBatteryOptimization = (
 
   // Get optimized settings based on battery and thermal state
   const getOptimizedSettings = () => {
-    const { level, charging, isLowBattery, thermalState, powerSaverMode, adaptivePowerSaving } = batteryState;
+    const { level, charging, isLowBattery, thermalState, adaptivePowerSaving } = batteryState;
     
     // Base settings
     let settings = {

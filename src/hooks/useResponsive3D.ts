@@ -85,7 +85,7 @@ export const useResponsive3D = (
   const getInitialConfig = () => {
     const settings = { ...defaultSettings, ...customSettings };
     const deviceConfig = settings[deviceInfo.type][deviceInfo.orientation];
-    const viewport = calculateViewportInfo();
+    // const viewport = calculateViewportInfo();
     
     // Keep device config as-is for manual positioning, with minimal viewport influence
     return deviceConfig;

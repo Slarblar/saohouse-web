@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useDeviceDetection } from './useDeviceDetection';
 
@@ -90,13 +90,13 @@ export const usePerformanceMonitor = (
     }
   });
 
-  const adjustQualityLevel = (currentFps: number, averageFps: number) => {
+  const adjustQualityLevel = (_currentFps: number, averageFps: number) => {
     qualityStabilityRef.current++;
 
     // Only adjust quality if performance has been stable for a while
     if (qualityStabilityRef.current < 60) return; // Wait 2 seconds at 30fps
 
-    const targetFps = deviceInfo.type === 'mobile' ? 30 : 45;
+    // const targetFps = deviceInfo.type === 'mobile' ? 30 : 45;
     
     setPerformanceState(prev => {
       let newQualityLevel = prev.qualityLevel;
