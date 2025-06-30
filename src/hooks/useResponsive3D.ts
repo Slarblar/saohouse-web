@@ -60,11 +60,11 @@ const calculateViewportInfo = (): ViewportInfo => {
 // These positions account for the model's actual geometry center, not coordinate center
 const defaultSettings: ResponsiveSettings = {
   mobile: {
-    portrait: { scale: 0.02112, position: [0.045, 0.15, 0] }, // iPhone responsive: 20% smaller, precise visual center (moved 0.025 left)
+    portrait: { scale: 0.025344, position: [0.045, 0.15, 0] }, // iPhone responsive: increased 20% for better visibility
     landscape: { scale: 0.084, position: [0.185, 0.7, 0] } // Moved logo higher for better spacing (0.52 → 0.7)
   },
   tablet: {
-    portrait: { scale: 0.02112, position: [0.045, 0.15, 0] }, // iPhone responsive: 20% smaller, precise visual center (moved 0.025 left)
+    portrait: { scale: 0.025344, position: [0.045, 0.15, 0] }, // iPhone responsive: increased 20% for better visibility
     landscape: { scale: 0.084, position: [0.185, 0.7, 0] } // Moved logo higher for better spacing (0.52 → 0.7)
   },
   desktop: {
@@ -219,8 +219,8 @@ export const useResponsive3D = (
                                    (currentViewport.width === 344 && currentViewport.height === 882));
     
     if (isPixel7Portrait && deviceInfo.orientation === 'portrait') {
-        // Reduce by 18% from the iPhone responsive portrait scale (0.02112)
-        const reducedScale = 0.02112 * 0.82; // 18% reduction
+        // Reduce by 18% from the updated iPhone responsive portrait scale (0.025344)
+        const reducedScale = 0.025344 * 0.82; // 18% reduction
         newConfig = {
             ...newConfig,
             scale: reducedScale,
@@ -272,14 +272,14 @@ export const useResponsive3D = (
                               (currentViewport.width === 1180 && currentViewport.height === 820));
     
     if (isIPadMiniPortrait) {
-        const adjustedScale = 0.02112 * 1.2529688; // 25.3% increase from iPhone responsive scale
+        const adjustedScale = 0.025344 * 1.2529688; // 25.3% increase from updated iPhone responsive scale
         newConfig = {
             ...newConfig,
             scale: adjustedScale,
             position: [0.045, 0.15, 0] as [number, number, number] // Updated to precise visual center position
         };
     } else if (isIPadAirPortrait) {
-        const increasedScale = 0.02112 * 1.70; // 70% increase from iPhone responsive scale
+        const increasedScale = 0.025344 * 1.70; // 70% increase from updated iPhone responsive scale
         newConfig = {
             ...newConfig,
             scale: increasedScale,
@@ -288,7 +288,7 @@ export const useResponsive3D = (
     }
     // Other iPad specific adjustments (only for portrait - let landscape use optimized settings)
     else if (deviceInfo.isIPad && deviceInfo.type === 'tablet' && deviceInfo.orientation === 'portrait') {
-        const increasedScale = 0.02112 * 1.62; // 62% increase from iPhone responsive scale
+        const increasedScale = 0.025344 * 1.62; // 62% increase from updated iPhone responsive scale
         newConfig = {
             ...newConfig,
             scale: increasedScale,

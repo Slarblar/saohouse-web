@@ -388,12 +388,25 @@
 /* Mobile Landscape Optimization */
 @media screen and (max-width: 768px) and (orientation: landscape) and (max-height: 600px) {
   .hero-3d-container {
+    /* Ensure black background in mobile landscape */
+    background: #000000 !important;
+    background-color: #000000 !important;
     /* Optimize for mobile landscape */
     touch-action: manipulation;
     height: 100vh;
     /* Prevent address bar issues */
     min-height: -webkit-fill-available;
     min-height: fill-available;
+  }
+  
+  .hero-3d-viewport {
+    background: #000000 !important;
+    background-color: #000000 !important;
+  }
+  
+  .hero-3d-content {
+    background: #000000 !important;
+    background-color: #000000 !important;
   }
 
   .loading-screen,
@@ -415,8 +428,21 @@
 /* Tablet Landscape Optimization */
 @media screen and (min-width: 768px) and (orientation: landscape) and (max-height: 800px) {
   .hero-3d-container {
+    /* Ensure black background in tablet landscape */
+    background: #000000 !important;
+    background-color: #000000 !important;
     /* Full performance for tablet landscape */
     will-change: filter, transform;
+  }
+  
+  .hero-3d-viewport {
+    background: #000000 !important;
+    background-color: #000000 !important;
+  }
+  
+  .hero-3d-content {
+    background: #000000 !important;
+    background-color: #000000 !important;
   }
 
   .canvas-container > canvas {
@@ -544,4 +570,34 @@
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+/* ============ LANDSCAPE BACKGROUND ENFORCEMENT ============ */
+
+/* Comprehensive landscape background fix - covers all landscape orientations */
+@media screen and (orientation: landscape) {
+  .hero-3d-container {
+    background: #000000 !important;
+    background-color: #000000 !important;
+  }
+  
+  .hero-3d-viewport {
+    background: #000000 !important;
+    background-color: #000000 !important;
+  }
+  
+  .hero-3d-content {
+    background: #000000 !important;
+    background-color: #000000 !important;
+  }
+  
+  .loading-screen {
+    background: #000000 !important;
+    background-color: #000000 !important;
+  }
+  
+  .error-screen {
+    background: #000000 !important;
+    background-color: #000000 !important;
+  }
 } 

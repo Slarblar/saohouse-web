@@ -277,10 +277,41 @@ body.modal-open > #root {
 
 /* Landscape-specific optimizations */
 @media screen and (orientation: landscape) and (max-height: 600px) {
+  html, body {
+    background: #000000 !important;
+    background-color: #000000 !important;
+    overflow: hidden;
+  }
+  
+  .app {
+    background: #000000 !important;
+    background-color: #000000 !important;
+  }
+  
   .modal-content,
   .signup-modal {
     max-height: 95vh;
     width: 80%;
+  }
+}
+
+/* Additional landscape background enforcement for all heights */
+@media screen and (orientation: landscape) {
+  html, body {
+    background: #000000 !important;
+    background-color: #000000 !important;
+    overflow: hidden;
+  }
+  
+  .app {
+    background: #000000 !important;
+    background-color: #000000 !important;
+  }
+  
+  /* Ensure no white borders/gaps in landscape */
+  .hero-3d {
+    background: #000000 !important;
+    background-color: #000000 !important;
   }
 }
 
