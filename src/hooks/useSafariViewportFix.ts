@@ -150,22 +150,26 @@ export const getSafariAdjustedPosition = (
   let yAdjustment = 0;
   
   if (safariInfo.isMobileSafari && safariInfo.isLandscape) {
-    // Safari landscape specific adjustments
+    // Safari landscape specific adjustments - move up by 0.18 units
+    const baseAdjustment = 0.18; // User requested adjustment
     const uiRatio = safariInfo.safariUIOffset / safariInfo.innerHeight;
     
+    // Start with base upward adjustment
+    yAdjustment = baseAdjustment;
+    
     if (uiRatio > 0.1) {
-      // Significant UI showing - shift down
-      yAdjustment = -0.05;
+      // Significant UI showing - additional adjustment
+      yAdjustment += 0.03;
     } else if (uiRatio < 0.05) {
-      // UI mostly hidden - shift up slightly
-      yAdjustment = 0.02;
+      // UI mostly hidden - keep base adjustment
+      yAdjustment = baseAdjustment;
     }
     
-    // Additional adjustment based on viewport height difference
+    // Additional fine adjustment based on viewport height difference
     const heightDiff = safariInfo.innerHeight - safariInfo.visualViewportHeight;
     if (heightDiff > 30) {
       // Large height difference indicates Safari UI is affecting centering
-      yAdjustment += heightDiff * -0.0005; // Fine adjustment factor
+      yAdjustment += heightDiff * 0.0002; // Fine adjustment factor (positive to move up)
     }
   }
   

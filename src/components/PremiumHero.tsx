@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import LoadingIndicator from './LoadingIndicator';
 import Hero3DLens from './Hero3DLens';
-import FPSCounter from './FPSCounter';
 import DeviceInfo from './DeviceInfo';
 
 const PremiumHero: React.FC = () => {
@@ -63,8 +62,6 @@ const PremiumHero: React.FC = () => {
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100vh', backgroundColor: '#000' }}>
-      {/* FPS Counter for performance monitoring */}
-      <FPSCounter position="top-right" showDetails={true} />
       <DeviceInfo position="bottom-right" collapsed={true} />
       
       {/* The loading indicator fades out as the scene fades in */}
