@@ -27,8 +27,18 @@ export const useSafariViewportFix = () => {
 
   const detectSafari = () => {
     const userAgent = navigator.userAgent.toLowerCase();
-    const isSafari = /safari/.test(userAgent) && !/chrome/.test(userAgent) && !/android/.test(userAgent);
-    const isMobileSafari = isSafari && /mobile/.test(userAgent);
+    // More comprehensive Safari detection
+    const isSafari = (/safari/.test(userAgent) && !/chrome/.test(userAgent) && !/android/.test(userAgent)) ||
+                     (/webkit/.test(userAgent) && /version/.test(userAgent));
+    const isMobileSafari = isSafari && (/mobile/.test(userAgent) || /iphone/.test(userAgent) || /ipad/.test(userAgent));
+    
+    // Debug logging for Safari detection
+    console.log('🔍 Safari Detection:', {
+      userAgent,
+      isSafari,
+      isMobileSafari,
+      isLandscape: window.innerWidth > window.innerHeight
+    });
     
     return { isSafari, isMobileSafari };
   };
@@ -70,7 +80,19 @@ export const useSafariViewportFix = () => {
     }
     
     // Determine if we need centering fix
-    const needsCenteringFix = isMobileSafari && isLandscape && Math.abs(innerHeight - visualViewportHeight) > 10;
+    const needsCenteringFix = isMobileSafari && isLandscape;
+    
+    // Debug logging for viewport calculations
+    if (isMobileSafari && isLandscape) {
+      console.log('📱 Safari Viewport Info:', {
+        innerHeight,
+        visualViewportHeight,
+        safariUIOffset,
+        actualViewportHeight,
+        needsCenteringFix,
+        heightDifference: Math.abs(innerHeight - visualViewportHeight)
+      });
+    }
     
     return {
       isSafari,
@@ -140,22 +162,16 @@ export const getSafariAdjustedPosition = (
   originalPosition: [number, number, number],
   safariInfo: SafariViewportInfo
 ): [number, number, number] => {
-  if (!safariInfo.needsCenteringFix) {
-    return originalPosition;
-  }
-
   const [x, y, z] = originalPosition;
   
-  // Calculate vertical adjustment for Safari
-  let yAdjustment = 0;
-  
+  // Always apply adjustment for Safari mobile landscape (simplified logic)
   if (safariInfo.isMobileSafari && safariInfo.isLandscape) {
     // Safari landscape specific adjustments - move up by 0.18 units
     const baseAdjustment = 0.18; // User requested adjustment
     const uiRatio = safariInfo.safariUIOffset / safariInfo.innerHeight;
     
     // Start with base upward adjustment
-    yAdjustment = baseAdjustment;
+    let yAdjustment = baseAdjustment;
     
     if (uiRatio > 0.1) {
       // Significant UI showing - additional adjustment
@@ -171,7 +187,21 @@ export const getSafariAdjustedPosition = (
       // Large height difference indicates Safari UI is affecting centering
       yAdjustment += heightDiff * 0.0002; // Fine adjustment factor (positive to move up)
     }
+    
+    const adjustedPosition: [number, number, number] = [x, y + yAdjustment, z];
+    
+    // Debug logging for position adjustment
+    console.log('🎯 Safari Position Adjustment:', {
+      original: originalPosition,
+      adjusted: adjustedPosition,
+      yAdjustment,
+      uiRatio,
+      heightDiff,
+      baseAdjustment
+    });
+    
+    return adjustedPosition;
   }
   
-  return [x, y + yAdjustment, z];
+  return originalPosition;
 }; 
