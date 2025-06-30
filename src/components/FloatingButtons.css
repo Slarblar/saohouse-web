@@ -424,7 +424,7 @@
   0% {
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-50%) translateX(-20px);
+    transform: translateY(-50%) translateX(20px);
   }
   1% {
     visibility: visible;
@@ -753,12 +753,13 @@
 
 /* ============ ORIENTATION-SPECIFIC OPTIMIZATIONS ============ */
 
-/* Mobile Landscape Optimization - Left Side Stack */
+/* Mobile Landscape Optimization - Right Side Stack */
 @media screen and (max-width: 1023px) and (orientation: landscape) and (max-height: 600px) {
   .floating-buttons {
     bottom: auto !important;
-    left: 1.5rem !important;
-    top: 50% !important;
+    right: 1.5rem !important;
+    left: auto !important;
+    top: 40% !important;
     transform: translateY(-50%) !important;
     flex-direction: column !important;
     gap: 0.6rem !important;
@@ -850,12 +851,13 @@
   }
 }
 
-/* Galaxy Z Fold specific positioning - ultra-wide landscape with very short height - Left Side Stack */
+/* Galaxy Z Fold specific positioning - ultra-wide landscape with very short height - Right Side Stack */
 @media screen and (width: 882px) and (height: 344px) and (orientation: landscape) {
   .floating-buttons {
     bottom: auto !important;
-    left: 1.5rem !important;
-    top: 50% !important;
+    right: 1.5rem !important;
+    left: auto !important;
+    top: 40% !important;
     transform: translateY(-50%) !important;
     flex-direction: column !important;
     gap: 0.5rem !important;
@@ -877,12 +879,13 @@
   }
 }
 
-/* Additional Apple Device Specific Optimization for Mobile Landscape - Left Side Stack */
+/* Additional Apple Device Specific Optimization for Mobile Landscape - Right Side Stack */
 @media screen and (max-width: 1023px) and (orientation: landscape) and (max-height: 500px) {
   .floating-buttons {
     bottom: auto !important;
-    left: 1.2rem !important;
-    top: 50% !important;
+    right: 1.2rem !important;
+    left: auto !important;
+    top: 40% !important;
     transform: translateY(-50%) !important;
     flex-direction: column !important;
     gap: 0.5rem !important;
@@ -892,20 +895,22 @@
 @media screen and (max-width: 736px) and (orientation: landscape) {
   .floating-buttons {
     bottom: auto !important;
-    left: 1.0rem !important;
-    top: 50% !important;
+    right: 1.0rem !important;
+    left: auto !important;
+    top: 40% !important;
     transform: translateY(-50%) !important;
     flex-direction: column !important;
     gap: 0.4rem !important;
   }
 }
 
-/* Mobile-Only Landscape Layout - Left Side Stack */
+/* Mobile-Only Landscape Layout - Right Side Stack */
 @media screen and (orientation: landscape) and (max-width: 1023px) and (max-height: 500px) {
   .floating-buttons {
     bottom: auto !important;
-    left: 1.5rem !important;
-    top: 50% !important;
+    right: 1.5rem !important;
+    left: auto !important;
+    top: 40% !important;
     transform: translateY(-50%) !important;
     flex-direction: column !important;
     gap: 0.6rem !important;
@@ -913,12 +918,13 @@
   }
 }
 
-/* Small Tablet Landscape - Bottom Positioning */
+/* Small Tablet Landscape - Right Side Positioning */
 @media screen and (orientation: landscape) and (min-width: 1024px) and (max-height: 500px) {
   .floating-buttons {
     bottom: auto !important;
-    left: 1.5rem !important;
-    top: 50% !important;
+    right: 1.5rem !important;
+    left: auto !important;
+    top: 40% !important;
     transform: translateY(-50%) !important;
     flex-direction: column !important;
     gap: 0.6rem !important;
