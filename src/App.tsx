@@ -1,5 +1,3 @@
-// React import not needed in modern React with automatic JSX transform
-import { useState } from 'react';
 import PremiumHero from './components/PremiumHero';
 import FloatingButtons from './components/FloatingButtons';
 
